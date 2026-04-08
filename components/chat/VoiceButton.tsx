@@ -19,7 +19,10 @@ export function VoiceButton({ enabled, listening, supported, onToggleSession, on
         type="button"
         variant={enabled ? "default" : "outline"}
         size="icon"
-        className={cn("rounded-full", enabled && "bg-[#1D9E75]")}
+        className={cn(
+          "rounded-full transition-colors duration-200",
+          enabled && "bg-[#1D9E75] hover:bg-[#178a64] text-white shadow-[0_0_12px_rgba(29,158,117,0.4)]"
+        )}
         onClick={onToggleSession}
         aria-pressed={enabled}
         title="Voice mode for this chat"

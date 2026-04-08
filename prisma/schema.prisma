@@ -63,6 +63,13 @@ model User {
   onboardingSituations Json?
   memorySnippet       String?
 
+  // Subscription fields
+  stripeCustomerId    String?
+  subscriptionStatus  String    @default("free") // free, trialing, active, canceled, past_due
+  subscriptionPlan    String    @default("free") // free, plus, care_plus
+  trialEnd            DateTime?
+  currentPeriodEnd    DateTime?
+
   accounts      Account[]
   sessions      Session[]
   conversations Conversation[]
@@ -70,6 +77,9 @@ model User {
   events        ConnectionEvent[]
   streak        UserStreak?
   crisisLogs    CrisisLog[]
+
+  @@index([subscriptionStatus])
+  @@index([stripeCustomerId])
 }
 
 model Account {
