@@ -34,9 +34,9 @@ export default function OfflinePage() {
 
         {/* Heading */}
         <div className="space-y-3">
-          <h1 className="text-3xl font-bold text-foreground">You're Offline</h1>
+          <h1 className="text-3xl font-bold text-foreground">You&apos;re Offline</h1>
           <p className="text-lg text-gray-500">
-            It looks like you've lost your internet connection. Don't worry, we'll be here when you're back online.
+            It looks like you&apos;ve lost your internet connection. Don&apos;t worry, we&apos;ll be here when you&apos;re back online.
           </p>
         </div>
 
