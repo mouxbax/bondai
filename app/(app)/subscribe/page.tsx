@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { auth } from '@/auth';
+
 import { Button } from '@/components/ui/button';
 import { Check, Loader2, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
@@ -158,7 +158,7 @@ export default function SubscribePage() {
       {showCanceledMessage && (
         <div className="max-w-7xl mx-auto mb-6 p-4 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg">
           <p className="text-amber-800 dark:text-amber-200">
-            Checkout was canceled. Feel free to try again whenever you're ready.
+            Checkout was canceled. Feel free to try again whenever you&apos;re ready.
           </p>
         </div>
       )}
@@ -273,7 +273,7 @@ export default function SubscribePage() {
               How does the free trial work?
             </h3>
             <p className="text-slate-600 dark:text-slate-400">
-              Start any paid plan with 7 days free. No credit card required to begin. You'll
+              Start any paid plan with 7 days free. No credit card required to begin. You&apos;ll
               have full access to all features during the trial period.
             </p>
           </div>
@@ -304,7 +304,7 @@ export default function SubscribePage() {
             </h3>
             <p className="text-slate-600 dark:text-slate-400">
               Absolutely. Cancel your subscription at any time from your account settings. You
-              won't be charged again after cancellation.
+              won&apos;t be charged again after cancellation.
             </p>
           </div>
         </div>

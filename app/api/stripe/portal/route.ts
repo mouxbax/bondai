@@ -3,7 +3,7 @@ import { auth } from '@/auth';
 import stripe from '@/lib/stripe';
 import { prisma } from '@/lib/db/prisma';
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     // Check authentication
     const session = await auth();

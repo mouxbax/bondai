@@ -22,6 +22,7 @@ export async function POST(request: NextRequest) {
 
     // Handle checkout.session.completed
     if (event.type === 'checkout.session.completed') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const session = event.data.object as any;
 
       if (session.customer) {
@@ -61,6 +62,7 @@ export async function POST(request: NextRequest) {
 
     // Handle customer.subscription.updated
     if (event.type === 'customer.subscription.updated') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const subscription = event.data.object as any;
       const customer = await stripe.customers.retrieve(subscription.customer as string);
       const userId = (customer.metadata?.userId) as string;
@@ -80,6 +82,7 @@ export async function POST(request: NextRequest) {
         await prisma.user.update({
           where: { id: userId },
           data: {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             subscriptionStatus: status as any,
             subscriptionPlan: plan,
             trialEnd: subscription.trial_end
@@ -95,6 +98,7 @@ export async function POST(request: NextRequest) {
 
     // Handle customer.subscription.deleted
     if (event.type === 'customer.subscription.deleted') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const subscription = event.data.object as any;
       const customer = await stripe.customers.retrieve(subscription.customer as string);
       const userId = (customer.metadata?.userId) as string;

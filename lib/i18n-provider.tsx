@@ -13,6 +13,7 @@ interface LocaleContextType {
 const LocaleContext = createContext<LocaleContextType | undefined>(undefined);
 
 // Translation storage
+// eslint-disable-next-line prefer-const, @typescript-eslint/no-explicit-any
 let translations: Record<Locale, Record<string, any>> = {
   en: {},
   fr: {},
@@ -38,6 +39,7 @@ loadTranslations();
 /**
  * Deep get translation value by dot notation key
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getTranslation(obj: any, path: string): string {
   const parts = path.split(".");
   let current = obj;

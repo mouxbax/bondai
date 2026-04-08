@@ -19,8 +19,8 @@ interface PaywallModalProps {
   plan: 'free' | 'plus' | 'care_plus';
 }
 
-export function PaywallModal({ isOpen, onClose, feature, plan }: PaywallModalProps) {
-  const [isLoading, setIsLoading] = useState(false);
+export function PaywallModal({ isOpen, onClose, feature, plan: _plan }: PaywallModalProps) {
+  const [isLoading] = useState(false);
 
   const featureDetails: Record<
     string,
@@ -69,11 +69,6 @@ export function PaywallModal({ isOpen, onClose, feature, plan }: PaywallModalPro
     { name: 'Advanced analytics', plus: false, careplus: true },
   ];
 
-  const handleUpgrade = async () => {
-    setIsLoading(true);
-    // Navigation happens through Link below
-  };
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-lg">
@@ -86,7 +81,7 @@ export function PaywallModal({ isOpen, onClose, feature, plan }: PaywallModalPro
           {/* Feature Comparison */}
           <div>
             <h4 className="font-semibold text-slate-900 dark:text-white mb-4">
-              What you'll unlock:
+              What you&apos;ll unlock:
             </h4>
             <div className="space-y-3">
               {features.map((f) => {
