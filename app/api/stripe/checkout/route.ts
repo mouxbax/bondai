@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create checkout session with 7-day free trial
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://bondai-amber.vercel.app';
 
     const checkoutSession = await stripe.checkout.sessions.create({
       customer: stripeCustomerId,

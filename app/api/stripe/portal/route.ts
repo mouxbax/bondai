@@ -27,7 +27,7 @@ export async function POST(_request: NextRequest) {
       );
     }
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://bondai-amber.vercel.app';
 
     // Create customer portal session
     const portalSession = await stripe.billingPortal.sessions.create({

@@ -40,7 +40,7 @@ export async function GET() {
     });
 
     // Set the session cookie and redirect
-    const response = NextResponse.redirect(new URL("/home", process.env.NEXTAUTH_URL || "http://localhost:3000"));
+    const response = NextResponse.redirect(new URL("/home", process.env.NEXTAUTH_URL || "https://bondai-amber.vercel.app"));
 
     // NextAuth v5 uses __Secure- prefix in production, plain in dev
     response.cookies.set("authjs.session-token", sessionToken, {

@@ -26,3 +26,14 @@ body {
     text-wrap: balance;
   }
 }
+
+/* Safe area for notched devices (iPhone X+) */
+@supports (padding: max(0px)) {
+  .safe-area-bottom {
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+  }
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}

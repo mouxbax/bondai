@@ -15,7 +15,7 @@ export function getOpenRouterClient(): OpenAI {
     apiKey,
     baseURL,
     defaultHeaders: {
-      "HTTP-Referer": process.env.NEXTAUTH_URL ?? "http://localhost:3000",
+      "HTTP-Referer": process.env.NEXTAUTH_URL ?? "https://bondai-amber.vercel.app",
       "X-Title": "BondAI",
     },
   });

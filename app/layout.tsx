@@ -15,6 +15,10 @@ export const metadata: Metadata = {
     "An AI companion that remembers your life, coaches social skills, and nudges you toward real-world connection.",
   manifest: "/manifest.json",
   appleWebApp: { capable: true, title: "BondAI", statusBarStyle: "default" },
+  icons: {
+    icon: "/icons/icon-192.png",
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 export const viewport: Viewport = {
@@ -25,6 +29,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
