@@ -49,7 +49,7 @@ export function PaywallModal({ isOpen, onClose, feature, plan }: PaywallModalPro
     },
     avatar: {
       title: 'Custom Avatar',
-      description: 'Personalize your BondAI with a custom avatar. Care+ only.',
+      description: 'Personalize your AIAH with a custom avatar. Care+ only.',
       requiredPlan: 'Care+',
     },
   };

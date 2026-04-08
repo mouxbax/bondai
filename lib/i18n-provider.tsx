@@ -81,10 +81,10 @@ export function LocaleProvider({ children }: LocaleProviderProps) {
 
   useEffect(() => {
     // Initialize from localStorage or cookie or browser language
-    const storedLocale = localStorage.getItem("bondai-locale");
+    const storedLocale = localStorage.getItem("aiah-locale");
     const cookieLocale = document.cookie
       .split("; ")
-      .find((row) => row.startsWith("bondai-locale="))
+      .find((row) => row.startsWith("aiah-locale="))
       ?.split("=")[1];
 
     let initialLocale: Locale = "en";
@@ -100,17 +100,17 @@ export function LocaleProvider({ children }: LocaleProviderProps) {
     }
 
     setLocale(initialLocale);
-    localStorage.setItem("bondai-locale", initialLocale);
+    localStorage.setItem("aiah-locale", initialLocale);
     document.documentElement.lang = initialLocale;
-    document.cookie = `bondai-locale=${initialLocale}; path=/; max-age=31536000`;
+    document.cookie = `aiah-locale=${initialLocale}; path=/; max-age=31536000`;
     setMounted(true);
   }, []);
 
   const setLocaleState = (newLocale: Locale) => {
     setLocale(newLocale);
-    localStorage.setItem("bondai-locale", newLocale);
+    localStorage.setItem("aiah-locale", newLocale);
     document.documentElement.lang = newLocale;
-    document.cookie = `bondai-locale=${newLocale}; path=/; max-age=31536000`;
+    document.cookie = `aiah-locale=${newLocale}; path=/; max-age=31536000`;
     // Dispatch custom event so components can react to locale change
     window.dispatchEvent(
       new CustomEvent("localechange", { detail: { locale: newLocale } })

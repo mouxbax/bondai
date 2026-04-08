@@ -10,11 +10,11 @@ import {
 const prisma = new PrismaClient();
 
 async function main() {
-  await prisma.user.deleteMany({ where: { email: "demo@bondai.app" } });
+  await prisma.user.deleteMany({ where: { email: "demo@aiah.app" } });
 
   const user = await prisma.user.create({
     data: {
-      email: "demo@bondai.app",
+      email: "demo@aiah.app",
       name: "Alex",
       onboardingComplete: true,
       connectionScore: 34,
@@ -258,7 +258,7 @@ async function main() {
   });
 
   // eslint-disable-next-line no-console
-  console.log("Seed complete — demo user: demo@bondai.app");
+  console.log("Seed complete — demo user: demo@aiah.app");
 }
 
 main()

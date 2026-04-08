@@ -1,7 +1,7 @@
 {
-  "name": "BondAI",
-  "short_name": "BondAI",
-  "description": "AI-powered companion that nudges you toward real human connection.",
+  "name": "AIAH",
+  "short_name": "AIAH",
+  "description": "Your AI companion for real human connection — check-ins, coaching, and gentle nudges toward the people who matter.",
   "start_url": "/home",
   "display": "standalone",
   "background_color": "#fafaf8",

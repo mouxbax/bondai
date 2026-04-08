@@ -15,11 +15,11 @@ export async function GET() {
     await prisma.$connect();
 
     // Create or find demo user
-    let user = await prisma.user.findUnique({ where: { email: "demo@bondai.app" } });
+    let user = await prisma.user.findUnique({ where: { email: "demo@aiah.app" } });
     if (!user) {
       user = await prisma.user.create({
         data: {
-          email: "demo@bondai.app",
+          email: "demo@aiah.app",
           name: "Moustafa",
           connectionScore: 10,
           onboardingComplete: false,

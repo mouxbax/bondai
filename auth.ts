@@ -4,9 +4,27 @@ import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import Nodemailer from "next-auth/providers/nodemailer";
 import { prisma } from "@/lib/db/prisma";
+import crypto from "crypto";
+
+// Simple password hashing (Node.js built-in, no bcrypt dependency needed)
+function hashPassword(password: string): string {
+  const salt = crypto.randomBytes(16).toString("hex");
+  const hash = crypto.scryptSync(password, salt, 64).toString("hex");
+  return `${salt}:${hash}`;
+}
+
+function verifyPassword(password: string, stored: string): boolean {
+  const [salt, hash] = stored.split(":");
+  if (!salt || !hash) return false;
+  const verify = crypto.scryptSync(password, salt, 64).toString("hex");
+  return hash === verify;
+}
+
+export { hashPassword, verifyPassword };
 
 const providers = [];
 
+// Google OAuth (when configured)
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   providers.push(
     Google({
@@ -16,6 +34,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   );
 }
 
+// Magic-link email (when configured)
 if (process.env.EMAIL_SERVER && process.env.EMAIL_FROM) {
   providers.push(
     Nodemailer({
@@ -25,40 +44,40 @@ if (process.env.EMAIL_SERVER && process.env.EMAIL_FROM) {
   );
 }
 
-if (providers.length === 0 && process.env.NODE_ENV === "development") {
-  providers.push(
-    Credentials({
-      id: "dev-email",
-      name: "Dev sign-in",
-      credentials: {
-        email: { label: "Email", type: "email", placeholder: "demo@bondai.app" },
-      },
-      async authorize(credentials) {
-        const email = typeof credentials?.email === "string" ? credentials.email.trim() : "";
-        if (!email || !email.includes("@")) return null;
-        let user = await prisma.user.findUnique({ where: { email } });
-        if (!user) {
-          user = await prisma.user.create({
-            data: {
-              email,
-              name: email.split("@")[0] ?? "Friend",
-              connectionScore: 10,
-            },
-          });
-        }
-        return user;
-      },
-    })
-  );
-}
+// Email + Password sign-in (always available)
+providers.push(
+  Credentials({
+    id: "email-password",
+    name: "Email",
+    credentials: {
+      email: { label: "Email", type: "email" },
+      password: { label: "Password", type: "password" },
+    },
+    async authorize(credentials) {
+      const email = typeof credentials?.email === "string" ? credentials.email.trim().toLowerCase() : "";
+      const password = typeof credentials?.password === "string" ? credentials.password : "";
+      if (!email || !email.includes("@") || !password) return null;
 
-// Credentials provider requires JWT strategy; OAuth providers use database strategy
-const hasOnlyCredentials = providers.length > 0 && providers.every((p) => (p as { type?: string }).type === "credentials");
+      const user = await prisma.user.findUnique({ where: { email } });
+      if (!user) return null;
 
+      // Check password stored in Account table
+      const account = await prisma.account.findFirst({
+        where: { userId: user.id, provider: "email-password" },
+      });
+      if (!account?.access_token) return null;
+      if (!verifyPassword(password, account.access_token)) return null;
+
+      return user;
+    },
+  })
+);
+
+// Credentials provider requires JWT; mixed providers also use JWT for simplicity
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  debug: true,
+  debug: process.env.NODE_ENV === "development",
   adapter: PrismaAdapter(prisma),
-  session: { strategy: hasOnlyCredentials ? "jwt" : "database" },
+  session: { strategy: "jwt" },
   pages: {
     signIn: "/login",
   },
@@ -71,17 +90,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
       return token;
     },
-    session({ session, user, token }) {
-      if (session.user) {
-        if (user) {
-          // Database strategy
-          session.user.id = user.id;
-          session.user.onboardingComplete = (user as { onboardingComplete?: boolean }).onboardingComplete ?? false;
-        } else if (token) {
-          // JWT strategy (credentials)
-          session.user.id = token.id as string;
-          session.user.onboardingComplete = (token.onboardingComplete as boolean) ?? false;
-        }
+    session({ session, token }) {
+      if (session.user && token) {
+        session.user.id = token.id as string;
+        session.user.onboardingComplete = (token.onboardingComplete as boolean) ?? false;
       }
       return session;
     },

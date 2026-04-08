@@ -33,7 +33,7 @@ export default function CoachingPage() {
       <Header title="Social coaching" />
       <main className="mx-auto w-full max-w-5xl flex-1 space-y-4 px-4 py-6 md:px-8">
         <p className="text-sm text-stone-600 dark:text-stone-300">
-          Pick a scenario. BondAI plays the other person — you practice the messy, human parts with coaching notes along the way.
+          Pick a scenario. AIAH plays the other person — you practice the messy, human parts with coaching notes along the way.
         </p>
         <div className="grid gap-4 sm:grid-cols-2">
           {COACHING_SCENARIOS.map((s) => (

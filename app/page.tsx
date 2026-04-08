@@ -14,7 +14,7 @@ export default async function LandingPage() {
   return (
     <div className="min-h-[100dvh] bg-[#FAFAF8] text-stone-900 dark:bg-[#0f1412] dark:text-stone-50">
       <header className="mx-auto flex max-w-5xl items-center justify-between px-4 py-6 md:px-8">
-        <span className="text-lg font-semibold text-[#1D9E75]">BondAI</span>
+        <span className="text-lg font-semibold text-[#1D9E75]">AIAH</span>
         <div className="flex gap-2">
           <Button asChild variant="ghost" className="rounded-xl">
             <Link href="/login">Log in</Link>
@@ -34,7 +34,7 @@ export default async function LandingPage() {
             You deserve to feel less alone.
           </h1>
           <p className="mx-auto max-w-2xl text-lg text-stone-600 dark:text-stone-300 md:mx-0">
-            BondAI checks in like a thoughtful friend, helps you practice real-world conversations, and nudges you toward
+            AIAH checks in like a thoughtful friend, helps you practice real-world conversations, and nudges you toward
             people — until you need us a little less.
           </p>
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-center md:justify-start">
@@ -75,7 +75,7 @@ export default async function LandingPage() {
           <h2 className="text-xl font-semibold">Backed by research on loneliness</h2>
           <p className="mt-2 text-sm text-stone-600 dark:text-stone-300">
             Loneliness is a global health priority — the WHO highlights social connection as protective for mental and physical
-            health. BondAI is designed to reduce isolation by strengthening your confidence with people, not replacing them.
+            health. AIAH is designed to reduce isolation by strengthening your confidence with people, not replacing them.
           </p>
         </section>
 
@@ -99,7 +99,7 @@ export default async function LandingPage() {
       </main>
 
       <footer className="border-t border-stone-100 py-8 text-center text-xs text-stone-500 dark:border-stone-800 dark:text-stone-400">
-        BondAI · Built with care · If you&apos;re in crisis, visit{" "}
+        AIAH · Built with care · If you&apos;re in crisis, visit{" "}
         <a className="text-[#1D9E75] underline" href="https://findahelpline.com">
           findahelpline.com
         </a>

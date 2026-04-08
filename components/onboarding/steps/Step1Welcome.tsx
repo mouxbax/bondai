@@ -13,7 +13,7 @@ export function Step1Welcome({
   return (
     <div className="space-y-4">
       <p className="text-lg text-stone-700 dark:text-stone-200">
-        Hey, I&apos;m <span className="font-semibold text-[#1D9E75]">BondAI</span>. What should I call you?
+        Hey, I&apos;m <span className="font-semibold text-[#1D9E75]">AIAH</span>. What should I call you?
       </p>
       <div className="space-y-2">
         <Label htmlFor="name">Your name</Label>

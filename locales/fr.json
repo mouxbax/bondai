@@ -8,9 +8,9 @@
   },
   "landing": {
     "tagline": "Un pont vers la vraie connexion",
-    "title": "BondAI — Un compagnon IA pour des relations plus profondes",
+    "title": "AIAH — Un compagnon IA pour des relations plus profondes",
     "subtitle": "Mémoriser votre vie. Coacher vos compétences sociales. Connectez-vous avec intention.",
-    "description": "BondAI est un compagnon IA qui se souvient de votre vie, vous coache en compétences sociales et vous encourage vers une vraie connexion.",
+    "description": "AIAH est un compagnon IA qui se souvient de votre vie, vous coache en compétences sociales et vous encourage vers une vraie connexion.",
     "cta.primary": "Commencer gratuitement",
     "cta.secondary": "Regarder la démo",
     "feature.memory.title": "Se souvient de tout",
@@ -31,7 +31,7 @@
     "pricing.tier.pro.features": "Tout de Plus, Conversations vocales IA, Support prioritaire"
   },
   "onboarding": {
-    "step1.title": "Bienvenue sur BondAI",
+    "step1.title": "Bienvenue sur AIAH",
     "step1.description": "Configurons votre profil pour que votre IA vous connaisse mieux",
     "step2.title": "Vos relations",
     "step2.description": "Parlez-nous des personnes qui comptent le plus pour vous",

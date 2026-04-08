@@ -19,7 +19,7 @@ export function AppNav() {
   return (
     <>
       <aside className="hidden w-56 shrink-0 border-r border-stone-100 bg-white/80 p-4 dark:border-stone-800 dark:bg-stone-900/80 md:block">
-        <div className="mb-8 px-2 text-lg font-semibold text-[#1D9E75]">BondAI</div>
+        <div className="mb-8 px-2 text-lg font-semibold text-[#1D9E75]">AIAH</div>
         <nav className="space-y-1">
           {items.map((item) => {
             const active = pathname === item.href || pathname.startsWith(`${item.href}/`);

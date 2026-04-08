@@ -13,7 +13,7 @@ export default function OfflinePage() {
   return (
     <div className="min-h-[100dvh] flex flex-col items-center justify-center px-4 safe-area-bottom">
       <div className="max-w-md w-full space-y-8 text-center">
-        {/* BondAI Logo / Branding */}
+        {/* AIAH Logo / Branding */}
         <div className="flex justify-center">
           <div className="w-24 h-24 rounded-full bg-[#1d9e75] flex items-center justify-center">
             <svg

@@ -17,7 +17,7 @@ export async function GET() {
   }
 
   // 2. Test user creation (what PrismaAdapter.createUser does)
-  const testEmail = `debug-test-${Date.now()}@bondai-test.dev`;
+  const testEmail = `debug-test-${Date.now()}@aiah-test.dev`;
   try {
     const user = await prisma.user.create({
       data: {

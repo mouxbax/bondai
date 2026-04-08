@@ -16,7 +16,7 @@ export function getOpenRouterClient(): OpenAI {
     baseURL,
     defaultHeaders: {
       "HTTP-Referer": process.env.NEXTAUTH_URL ?? "https://bondai-amber.vercel.app",
-      "X-Title": "BondAI",
+      "X-Title": "AIAH",
     },
   });
 }

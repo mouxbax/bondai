@@ -10,11 +10,11 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "BondAI — A bridge back to real connection",
+  title: "AIAH — A bridge back to real connection",
   description:
-    "An AI companion that remembers your life, coaches social skills, and nudges you toward real-world connection.",
+    "Your AI companion that remembers your life, coaches social skills, and nudges you toward real-world connection.",
   manifest: "/manifest.json",
-  appleWebApp: { capable: true, title: "BondAI", statusBarStyle: "default" },
+  appleWebApp: { capable: true, title: "AIAH", statusBarStyle: "default" },
   icons: {
     icon: "/icons/icon-192.png",
     apple: "/apple-touch-icon.png",
