@@ -56,6 +56,7 @@ if (providers.length === 0 && process.env.NODE_ENV === "development") {
 const hasOnlyCredentials = providers.length > 0 && providers.every((p) => (p as { type?: string }).type === "credentials");
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  debug: true,
   adapter: PrismaAdapter(prisma),
   session: { strategy: hasOnlyCredentials ? "jwt" : "database" },
   pages: {
