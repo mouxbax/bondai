@@ -19,7 +19,8 @@ interface PaywallModalProps {
   plan: 'free' | 'plus' | 'care_plus';
 }
 
-export function PaywallModal({ isOpen, onClose, feature, plan: _plan }: PaywallModalProps) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function PaywallModal({ isOpen, onClose, feature, plan }: PaywallModalProps) {
   const [isLoading] = useState(false);
 
   const featureDetails: Record<
