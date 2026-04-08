@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import type Stripe from 'stripe';
 import stripe from '@/lib/stripe';
 import { prisma } from '@/lib/db/prisma';
 
@@ -28,7 +29,7 @@ export async function POST(request: NextRequest) {
       if (session.customer) {
         // Get customer to find user
         const customer = await stripe.customers.retrieve(session.customer as string);
-        const userId = (customer.metadata?.userId) as string;
+        const userId = getUserIdFromCustomer(customer);
 
         if (userId) {
           // Get subscription details
@@ -65,7 +66,7 @@ export async function POST(request: NextRequest) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const subscription = event.data.object as any;
       const customer = await stripe.customers.retrieve(subscription.customer as string);
-      const userId = (customer.metadata?.userId) as string;
+      const userId = getUserIdFromCustomer(customer);
 
       if (userId) {
         const priceId = subscription.items.data[0]?.price.id;
@@ -101,7 +102,7 @@ export async function POST(request: NextRequest) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const subscription = event.data.object as any;
       const customer = await stripe.customers.retrieve(subscription.customer as string);
-      const userId = (customer.metadata?.userId) as string;
+      const userId = getUserIdFromCustomer(customer);
 
       if (userId) {
         await prisma.user.update({
@@ -136,4 +137,16 @@ function getPlanFromPriceId(priceId: string): string {
   if (priceId === PRICE_PLUS) return 'plus';
   if (priceId === PRICE_CARE_PLUS) return 'care_plus';
   return 'free';
+}
+
+/**
+ * Safely read userId from Stripe customer metadata.
+ * Stripe may return a DeletedCustomer for retrieve(), which has no metadata.
+ */
+function getUserIdFromCustomer(customer: Stripe.Customer | Stripe.DeletedCustomer): string | undefined {
+  if ('deleted' in customer && customer.deleted) {
+    return undefined;
+  }
+  const userId = customer.metadata?.userId;
+  return typeof userId === 'string' && userId.length > 0 ? userId : undefined;
 }
