@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { Moon, Sun } from "lucide-react";
+import Link from "next/link";
+import { Moon, Sun, UserCircle2 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 
@@ -11,9 +12,9 @@ export function Header({ title, right }: { title: string; right?: React.ReactNod
   React.useEffect(() => setMounted(true), []);
 
   return (
-    <header className="sticky top-0 z-40 flex items-center justify-between border-b border-stone-100 bg-[#FAFAF8]/90 px-4 py-3 backdrop-blur-md dark:border-stone-800 dark:bg-[#0f1412]/90 md:px-6">
+    <header className="sticky top-0 z-40 flex items-center justify-between bg-[#FAFAF8]/70 px-4 py-3 backdrop-blur-2xl dark:bg-[#0f1412]/70 md:px-6">
       <h1 className="text-lg font-semibold tracking-tight text-stone-900 dark:text-stone-50">{title}</h1>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1">
         {right}
         {mounted ? (
           <Button
@@ -28,6 +29,11 @@ export function Header({ title, right }: { title: string; right?: React.ReactNod
         ) : (
           <span className="h-10 w-10" />
         )}
+        <Button asChild variant="ghost" size="icon" aria-label="Account">
+          <Link href="/account">
+            <UserCircle2 className="h-5 w-5" />
+          </Link>
+        </Button>
       </div>
     </header>
   );

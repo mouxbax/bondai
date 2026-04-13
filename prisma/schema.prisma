@@ -64,6 +64,14 @@ model User {
   onboardingSituations Json?
   memorySnippet       String?
 
+  // Profile fields shown on /account
+  age                 Int?
+  sex                 String?   // free text: "male", "female", "nonbinary", "prefer not to say", etc.
+  interests           String[]  @default([])
+  likes               String?
+  dislikes            String?
+  bio                 String?
+
   // Subscription fields
   stripeCustomerId    String?
   subscriptionStatus  String    @default("free") // free, trialing, active, canceled, past_due

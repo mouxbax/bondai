@@ -35,10 +35,10 @@ export function MessageBubble({
       className={`flex w-full ${isUser ? "justify-end" : "justify-start"}`}
     >
       <div
-        className={`group relative max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm ${
+        className={`group relative max-w-[85%] rounded-[22px] px-4 py-3 text-sm leading-relaxed backdrop-blur-xl ${
           isUser
-            ? "bg-[#1D9E75] text-white"
-            : "border border-stone-100 bg-white text-stone-800 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100"
+            ? "bg-[#1D9E75] text-white shadow-[0_4px_20px_-4px_rgba(29,158,117,0.35)]"
+            : "bg-white/80 text-stone-800 shadow-[0_4px_20px_-8px_rgba(0,0,0,0.1)] dark:bg-stone-800/70 dark:text-stone-100"
         }`}
       >
         <p className="whitespace-pre-wrap">{content}</p>

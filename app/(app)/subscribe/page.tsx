@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { motion } from 'framer-motion';
 
 import { Button } from '@/components/ui/button';
 import { Check, Loader2, AlertCircle } from 'lucide-react';
@@ -164,10 +165,17 @@ export default function SubscribePage() {
       )}
 
       {/* Pricing Cards */}
-      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.12 } } }}
+        className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 mb-12"
+      >
         {tiers.map((tier) => (
-          <div
+          <motion.div
             key={tier.id}
+            variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } }}
+            whileHover={{ y: -4 }}
             className={`relative bg-white dark:bg-slate-800 rounded-2xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl ${
               tier.id !== 'free' ? 'md:scale-105 ring-2 ring-[#1D9E75]' : ''
             }`}
@@ -238,9 +246,9 @@ export default function SubscribePage() {
                 ))}
               </div>
             </div>
-          </div>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
 
       {/* Manage Subscription Button */}
       <div className="max-w-7xl mx-auto text-center mb-12">

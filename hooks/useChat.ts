@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import type { EmotionTag } from "@prisma/client";
 import type { CrisisPayload } from "@/types";
 
@@ -22,41 +22,82 @@ export function useChat(conversationId: string | null) {
     emotion?: EmotionTag | null;
     crisis?: CrisisPayload | null;
   } | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   const load = useCallback(async () => {
     if (!conversationId) return;
     setError(null);
-    const res = await fetch(`/api/chat/${conversationId}`);
-    if (!res.ok) {
-      setError("Could not load messages.");
-      return;
+    try {
+      const res = await fetch(`/api/chat/${conversationId}`, { cache: "no-store" });
+      if (!res.ok) {
+        setError("Could not load messages.");
+        return;
+      }
+      const data = (await res.json()) as { messages: ChatMessageRow[] };
+      setMessages(data.messages);
+    } catch {
+      setError("Couldn't reach the server. Check your connection.");
     }
-    const data = (await res.json()) as { messages: ChatMessageRow[] };
-    setMessages(data.messages);
   }, [conversationId]);
 
   const send = useCallback(
     async (content: string, opts?: { useVoice?: boolean; bootstrap?: boolean }) => {
       if (!conversationId) return;
+
+      // Cancel any in-flight request
+      if (abortRef.current) {
+        abortRef.current.abort();
+      }
+      const ac = new AbortController();
+      abortRef.current = ac;
+
       setError(null);
       setThinking(true);
       setStreaming("");
       setLastMeta(null);
 
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          conversationId,
-          content,
-          useVoice: opts?.useVoice,
-          bootstrap: opts?.bootstrap,
-        }),
-      });
-
-      if (!res.ok || !res.body) {
+      let res: Response;
+      try {
+        res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            conversationId,
+            content,
+            useVoice: opts?.useVoice,
+            bootstrap: opts?.bootstrap,
+          }),
+          signal: ac.signal,
+        });
+      } catch (e) {
         setThinking(false);
-        setError("Could not send message.");
+        if ((e as Error).name === "AbortError") return;
+        setError(
+          navigator.onLine === false
+            ? "You're offline. Reconnect and try again."
+            : "Couldn't reach the server. Try again in a moment.",
+        );
+        return;
+      }
+
+      if (!res.ok) {
+        setThinking(false);
+        let msg = "Message failed to send.";
+        try {
+          const j = (await res.json()) as { error?: string };
+          if (j.error) msg = j.error;
+        } catch {
+          /* ignore */
+        }
+        if (res.status === 401) msg = "You've been logged out. Please sign in again.";
+        if (res.status === 500) msg = "The AI hit a snag. Try again in a moment.";
+        setError(msg);
+        return;
+      }
+
+      if (!res.body) {
+        setThinking(false);
+        setError("No response from the server.");
         return;
       }
 
@@ -64,6 +105,21 @@ export function useChat(conversationId: string | null) {
       const decoder = new TextDecoder();
       let buffer = "";
       let assembled = "";
+      let streamErrored = false;
+
+      // Optimistically add the user message so it never disappears
+      const optimisticUserId = `local-u-${Date.now()}`;
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: optimisticUserId,
+          role: "USER",
+          content,
+          createdAt: new Date().toISOString(),
+          emotionTag: null,
+          voiceUsed: Boolean(opts?.useVoice),
+        },
+      ]);
 
       try {
         while (true) {
@@ -89,6 +145,7 @@ export function useChat(conversationId: string | null) {
                 });
               }
               if (obj.type === "error") {
+                streamErrored = true;
                 setError(typeof obj.message === "string" ? obj.message : "Chat error");
               }
             } catch {
@@ -96,14 +153,52 @@ export function useChat(conversationId: string | null) {
             }
           }
         }
+      } catch (e) {
+        if ((e as Error).name !== "AbortError") {
+          streamErrored = true;
+          setError("Connection dropped mid-reply. Try again.");
+        }
       } finally {
         setThinking(false);
+
+        // Optimistically add the assistant reply so it never disappears,
+        // even if the DB write on the server failed silently.
+        if (assembled && !streamErrored) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `local-a-${Date.now()}`,
+              role: "ASSISTANT",
+              content: assembled,
+              createdAt: new Date().toISOString(),
+              emotionTag: null,
+              voiceUsed: false,
+            },
+          ]);
+        }
         setStreaming("");
-        await load();
+
+        // Then reconcile with the server — this replaces optimistic rows with
+        // persisted ones. If the server write failed, the optimistic row stays.
+        try {
+          const reload = await fetch(`/api/chat/${conversationId}`, { cache: "no-store" });
+          if (reload.ok) {
+            const data = (await reload.json()) as { messages: ChatMessageRow[] };
+            if (data.messages.length > 0) {
+              setMessages(data.messages);
+            }
+          }
+        } catch {
+          /* keep optimistic state */
+        }
+
+        if (abortRef.current === ac) abortRef.current = null;
       }
     },
-    [conversationId, load]
+    [conversationId, load],
   );
 
-  return { messages, streaming, thinking, error, lastMeta, load, send };
+  const clearError = useCallback(() => setError(null), []);
+
+  return { messages, streaming, thinking, error, lastMeta, load, send, clearError };
 }

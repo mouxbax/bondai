@@ -25,6 +25,50 @@ body {
   .text-balance {
     text-wrap: balance;
   }
+
+  /* Soft glass card — replaces clinical bordered boxes */
+  .soft-card {
+    @apply rounded-3xl bg-white/70 shadow-[0_4px_24px_-8px_rgba(0,0,0,0.08)] backdrop-blur-xl;
+  }
+  .dark .soft-card {
+    @apply bg-stone-900/60 shadow-[0_4px_24px_-8px_rgba(0,0,0,0.5)];
+  }
+
+  .soft-card-lg {
+    @apply rounded-[2rem] bg-white/60 shadow-[0_12px_48px_-12px_rgba(0,0,0,0.12)] backdrop-blur-2xl;
+  }
+  .dark .soft-card-lg {
+    @apply bg-stone-900/50 shadow-[0_12px_48px_-12px_rgba(0,0,0,0.6)];
+  }
+
+  /* Smooth cubic-bezier for buttery transitions */
+  .ease-butter {
+    transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* Ambient glow for focus states */
+  .glow-primary {
+    box-shadow:
+      0 0 0 1px rgba(29, 158, 117, 0.15),
+      0 8px 32px -8px rgba(29, 158, 117, 0.25);
+  }
+
+  /* Page-wide fluid transitions */
+  .fluid {
+    transition-property: background-color, color, border-color, opacity, transform, box-shadow, filter;
+    transition-duration: 300ms;
+    transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}
+
+/* Smooth scrolling everywhere */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Kill default outline jerkiness */
+* {
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Safe area for notched devices (iPhone X+) */
