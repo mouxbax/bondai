@@ -20,11 +20,17 @@ interface Pattern {
   cycles: number;
 }
 
+interface SessionDuration {
+  id: string;
+  label: string;
+  seconds: number;
+}
+
 const PATTERNS: Pattern[] = [
   {
     id: "box",
     name: "Box breathing",
-    desc: "4 · 4 · 4 · 4 — calm focus",
+    desc: "4 · 4 · 4 · 4 - calm focus",
     inhale: 4,
     hold: 4,
     exhale: 4,
@@ -53,6 +59,30 @@ const PATTERNS: Pattern[] = [
   },
 ];
 
+const DURATIONS: SessionDuration[] = [
+  { id: "1m", label: "1 min", seconds: 60 },
+  { id: "5m", label: "5 min", seconds: 300 },
+  { id: "10m", label: "10 min", seconds: 600 },
+];
+
+const END_QUOTES = {
+  soft: [
+    "A calm breath is a quiet promise to yourself.",
+    "You met yourself with care. That matters.",
+    "Breathe gently. You are worth this softness.",
+  ],
+  aware: [
+    "Awareness starts with one honest breath.",
+    "You are not behind - you are here.",
+    "Notice this moment. It is enough.",
+  ],
+  playful: [
+    "You just turned oxygen into emotional Wi-Fi.",
+    "Breath check complete. Nervous system now slightly more fabulous.",
+    "Gold star for your lungs and your heart.",
+  ],
+};
+
 interface BreathingExerciseProps {
   open: boolean;
   onClose: () => void;
@@ -65,6 +95,12 @@ function phaseLabel(p: Phase): string {
   if (p === "rest") return "Rest";
   if (p === "done") return "Well done";
   return "Ready?";
+}
+
+function formatMMSS(totalSeconds: number): string {
+  const mins = Math.floor(totalSeconds / 60);
+  const secs = totalSeconds % 60;
+  return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
 }
 
 function ensureCtx(ctxRef: React.MutableRefObject<AudioContext | null>): AudioContext | null {
@@ -84,35 +120,40 @@ function ensureCtx(ctxRef: React.MutableRefObject<AudioContext | null>): AudioCo
 }
 
 /**
- * Start a continuous ambient meditation pad — four detuned sines in A-minor.
+ * Start a smooth 4-bar evolving meditation pad.
  * Returns a stop function.
  */
 function startMeditationPad(ctx: AudioContext, dest: AudioNode): () => void {
-  // A-minor open chord: A2 E3 A3 C4
-  const freqs = [110, 164.81, 220, 261.63];
+  const progression = [
+    [174.61, 207.65, 261.63, 349.23], // Fm
+    [174.61, 207.65, 261.63, 349.23], // Fm
+    [174.61, 207.65, 261.63, 349.23], // Fm
+    [174.61, 207.65, 261.63, 349.23], // Fm
+  ];
+  const barSeconds = 4;
   const master = ctx.createGain();
-  master.gain.value = 0.22;
+  master.gain.value = 0.18;
   const filter = ctx.createBiquadFilter();
   filter.type = "lowpass";
-  filter.frequency.value = 1500;
-  filter.Q.value = 0.7;
+  filter.frequency.value = 2100;
+  filter.Q.value = 0.5;
   master.connect(filter);
   filter.connect(dest);
 
   const stops: Array<() => void> = [];
-  freqs.forEach((f, i) => {
+  const oscillators: OscillatorNode[] = [];
+  const voiceGains: GainNode[] = [];
+  progression[0].forEach((f, i) => {
     const osc = ctx.createOscillator();
-    osc.type = i % 2 === 0 ? "sine" : "triangle";
+    osc.type = i === progression[0].length - 1 ? "triangle" : "sine";
     osc.frequency.value = f;
-    // Slight detune for warmth
-    osc.detune.value = (i - 1.5) * 6;
+    osc.detune.value = (i - 1.5) * 2;
     const g = ctx.createGain();
-    g.gain.value = 0.25;
-    // Gentle LFO on gain
+    g.gain.value = i === progression[0].length - 1 ? 0.1 : 0.14;
     const lfo = ctx.createOscillator();
-    lfo.frequency.value = 0.08 + i * 0.05;
+    lfo.frequency.value = 0.06 + i * 0.04;
     const lfoGain = ctx.createGain();
-    lfoGain.gain.value = 0.08;
+    lfoGain.gain.value = 0.05;
     lfo.connect(lfoGain);
     lfoGain.connect(g.gain);
     osc.connect(g);
@@ -125,7 +166,28 @@ function startMeditationPad(ctx: AudioContext, dest: AudioNode): () => void {
         lfo.stop();
       } catch {}
     });
+    oscillators.push(osc);
+    voiceGains.push(g);
   });
+
+  let idx = 0;
+  const chordLooper = window.setInterval(() => {
+    idx = (idx + 1) % progression.length;
+    const next = progression[idx];
+    const now = ctx.currentTime;
+    oscillators.forEach((osc, i) => {
+      osc.frequency.cancelScheduledValues(now);
+      osc.frequency.setValueAtTime(osc.frequency.value, now);
+      osc.frequency.linearRampToValueAtTime(next[i], now + 1.3);
+    });
+    voiceGains.forEach((g) => {
+      g.gain.cancelScheduledValues(now);
+      g.gain.setValueAtTime(g.gain.value, now);
+      g.gain.linearRampToValueAtTime(0.16, now + 0.6);
+      g.gain.linearRampToValueAtTime(0.12, now + barSeconds - 0.1);
+    });
+  }, barSeconds * 1000);
+  stops.push(() => window.clearInterval(chordLooper));
 
   return () => {
     stops.forEach((s) => s());
@@ -137,7 +199,7 @@ function startMeditationPad(ctx: AudioContext, dest: AudioNode): () => void {
 }
 
 /**
- * A "breath" whoosh sound — filtered pink noise that swells and fades.
+ * A "breath" whoosh sound - filtered pink noise that swells and fades.
  */
 function playBreathSound(ctx: AudioContext, dest: AudioNode, kind: "in" | "out", duration: number) {
   try {
@@ -211,21 +273,32 @@ function playChime(ctx: AudioContext, dest: AudioNode, freq: number) {
 export function BreathingExercise({ open, onClose }: BreathingExerciseProps) {
   const { theme, mood } = useMood();
   const [pattern, setPattern] = useState<Pattern>(PATTERNS[0]);
+  const [duration, setDuration] = useState<SessionDuration>(DURATIONS[1]);
   const [phase, setPhase] = useState<Phase>("intro");
   const [cycle, setCycle] = useState(0);
   const [count, setCount] = useState(0);
+  const [remainingSession, setRemainingSession] = useState(DURATIONS[1].seconds);
+  const [finalQuote, setFinalQuote] = useState("");
   const [soundOn, setSoundOn] = useState(true);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const countRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const sessionRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const holdCueRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const audioRef = useRef<AudioContext | null>(null);
   const padStopRef = useRef<(() => void) | null>(null);
   const cancelledRef = useRef(false);
+  const completedRef = useRef(false);
+  const endAtRef = useRef<number>(0);
 
   const cleanup = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
     if (countRef.current) clearInterval(countRef.current);
+    if (sessionRef.current) clearInterval(sessionRef.current);
+    if (holdCueRef.current) clearTimeout(holdCueRef.current);
     timerRef.current = null;
     countRef.current = null;
+    sessionRef.current = null;
+    holdCueRef.current = null;
   }, []);
 
   const stopPad = useCallback(() => {
@@ -243,10 +316,44 @@ export function BreathingExercise({ open, onClose }: BreathingExerciseProps) {
       setPhase("intro");
       setCycle(0);
       setCount(0);
+      setRemainingSession(duration.seconds);
+      setFinalQuote("");
+      completedRef.current = false;
     } else {
       cancelledRef.current = false;
     }
-  }, [open, cleanup, stopPad]);
+  }, [open, cleanup, duration.seconds, stopPad]);
+
+  const pickEndQuote = useCallback(() => {
+    const personality =
+      mood === "happy" || mood === "energetic"
+        ? "playful"
+        : mood === "anxious" || mood === "sad" || mood === "tender"
+          ? "soft"
+          : "aware";
+    const pool = END_QUOTES[personality];
+    return pool[Math.floor(Math.random() * pool.length)];
+  }, [mood]);
+
+  const finishSession = useCallback(() => {
+    if (completedRef.current) return;
+    completedRef.current = true;
+    cleanup();
+    stopPad();
+    setCount(0);
+    setPhase("done");
+    setFinalQuote(pickEndQuote());
+    if (soundOn) {
+      const ctx = ensureCtx(audioRef);
+      if (ctx) {
+        playChime(ctx, ctx.destination, 523.25);
+        setTimeout(() => playChime(ctx, ctx.destination, 659.25), 250);
+        setTimeout(() => playChime(ctx, ctx.destination, 783.99), 500);
+      }
+    }
+    awardXP("mood_log");
+    checkAchievements();
+  }, [cleanup, pickEndQuote, soundOn, stopPad]);
 
   // Start/stop meditation pad when session is active
   useEffect(() => {
@@ -264,15 +371,28 @@ export function BreathingExercise({ open, onClose }: BreathingExerciseProps) {
 
   const runPhase = useCallback(
     (next: Phase, duration: number, onComplete: () => void) => {
-      if (cancelledRef.current) return;
+      if (cancelledRef.current || completedRef.current) return;
+      const remainingMs = endAtRef.current - Date.now();
+      const phaseDuration = Math.max(0, Math.min(duration, Math.ceil(remainingMs / 1000)));
+      if (phaseDuration <= 0) {
+        finishSession();
+        return;
+      }
       setPhase(next);
-      setCount(duration);
+      setCount(phaseDuration);
       if (soundOn) {
         const ctx = ensureCtx(audioRef);
         if (ctx) {
-          if (next === "inhale") playBreathSound(ctx, ctx.destination, "in", duration);
-          else if (next === "exhale") playBreathSound(ctx, ctx.destination, "out", duration);
+          if (next === "inhale") playBreathSound(ctx, ctx.destination, "in", phaseDuration);
+          else if (next === "exhale") playBreathSound(ctx, ctx.destination, "out", phaseDuration);
           else if (next === "hold") playChime(ctx, ctx.destination, 523.25);
+          if (next === "hold" && phaseDuration >= 2) {
+            holdCueRef.current = setTimeout(() => {
+              if (!cancelledRef.current && !completedRef.current) {
+                playChime(ctx, ctx.destination, 659.25);
+              }
+            }, Math.max(300, (phaseDuration - 0.4) * 1000));
+          }
         }
       }
       countRef.current = setInterval(() => {
@@ -286,27 +406,18 @@ export function BreathingExercise({ open, onClose }: BreathingExerciseProps) {
       }, 1000);
       timerRef.current = setTimeout(() => {
         if (countRef.current) clearInterval(countRef.current);
+        if (holdCueRef.current) clearTimeout(holdCueRef.current);
         if (!cancelledRef.current) onComplete();
-      }, duration * 1000);
+      }, phaseDuration * 1000);
     },
-    [soundOn],
+    [finishSession, soundOn],
   );
 
   const runCycle = useCallback(
     (i: number) => {
-      if (cancelledRef.current) return;
-      if (i >= pattern.cycles) {
-        setPhase("done");
-        if (soundOn) {
-          const ctx = ensureCtx(audioRef);
-          if (ctx) {
-            playChime(ctx, ctx.destination, 523.25);
-            setTimeout(() => playChime(ctx, ctx.destination, 659.25), 250);
-            setTimeout(() => playChime(ctx, ctx.destination, 783.99), 500);
-          }
-        }
-        awardXP("mood_log");
-        checkAchievements();
+      if (cancelledRef.current || completedRef.current) return;
+      if (Date.now() >= endAtRef.current) {
+        finishSession();
         return;
       }
       setCycle(i + 1);
@@ -332,14 +443,24 @@ export function BreathingExercise({ open, onClose }: BreathingExerciseProps) {
         }
       });
     },
-    [pattern, runPhase, soundOn],
+    [finishSession, pattern, runPhase],
   );
 
   const startSession = () => {
+    cleanup();
     cancelledRef.current = false;
+    completedRef.current = false;
     // Unlock audio on user gesture
     ensureCtx(audioRef);
     setCycle(0);
+    setFinalQuote("");
+    setRemainingSession(duration.seconds);
+    endAtRef.current = Date.now() + duration.seconds * 1000;
+    sessionRef.current = setInterval(() => {
+      const remaining = Math.max(0, Math.ceil((endAtRef.current - Date.now()) / 1000));
+      setRemainingSession(remaining);
+      if (remaining <= 0) finishSession();
+    }, 300);
     runCycle(0);
   };
 
@@ -424,11 +545,32 @@ export function BreathingExercise({ open, onClose }: BreathingExerciseProps) {
               >
                 <AIAHOrb mood={mood} size={180} />
                 <h2 className={`text-center text-2xl font-semibold ${theme.text}`}>
-                  Breathe with me
+                  It is your time to take a pause from chaos and breathe...
                 </h2>
                 <p className={`max-w-sm text-center text-sm ${theme.textMuted}`}>
-                  Pick a rhythm. Meditation music will play and I&apos;ll count with you while the orb breathes.
+                  Choose a technique and session length. A smooth pad will play while I guide your breath.
                 </p>
+                <div className="flex w-full max-w-md flex-wrap justify-center gap-2">
+                  {DURATIONS.map((d) => {
+                    const active = duration.id === d.id;
+                    return (
+                      <button
+                        key={d.id}
+                        onClick={() => {
+                          setDuration(d);
+                          setRemainingSession(d.seconds);
+                        }}
+                        className={`rounded-full px-4 py-2 text-xs font-semibold transition-all ${
+                          active
+                            ? "bg-[#1D9E75] text-white shadow-[0_8px_24px_-8px_rgba(29,158,117,0.6)]"
+                            : "bg-white/60 text-stone-700 backdrop-blur dark:bg-stone-900/40 dark:text-stone-300"
+                        }`}
+                      >
+                        {d.label}
+                      </button>
+                    );
+                  })}
+                </div>
                 <div className="mt-2 flex w-full max-w-md flex-col gap-2">
                   {PATTERNS.map((p) => {
                     const active = pattern.id === p.id;
@@ -444,7 +586,7 @@ export function BreathingExercise({ open, onClose }: BreathingExerciseProps) {
                       >
                         <div className="text-sm font-semibold">{p.name}</div>
                         <div className={`text-xs ${active ? "text-white/80" : "text-stone-500"}`}>
-                          {p.desc} · {p.cycles} cycles
+                          {p.desc}
                         </div>
                       </button>
                     );
@@ -467,7 +609,7 @@ export function BreathingExercise({ open, onClose }: BreathingExerciseProps) {
                 <AIAHOrb mood="happy" size={200} />
                 <h2 className={`text-center text-3xl font-semibold ${theme.text}`}>Nicely done</h2>
                 <p className={`max-w-sm text-center text-sm ${theme.textMuted}`}>
-                  You completed {pattern.cycles} full breaths. Notice how your body feels now.
+                  {finalQuote || "Notice your breath. Notice yourself."}
                 </p>
                 <div className="flex gap-3">
                   <button
@@ -511,7 +653,7 @@ export function BreathingExercise({ open, onClose }: BreathingExerciseProps) {
                     {count}
                   </p>
                   <p className={`text-xs ${theme.textMuted}`}>
-                    Cycle {cycle} of {pattern.cycles}
+                    Time left {formatMMSS(remainingSession)} · Cycle {cycle}
                   </p>
                 </motion.div>
               </div>

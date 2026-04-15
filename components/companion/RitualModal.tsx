@@ -9,6 +9,8 @@ import { addMoodEntry } from "@/lib/life-storage";
 import { awardXP, checkAchievements } from "@/lib/gamification";
 import { getTodayQuests } from "@/lib/quests";
 import { useCelebrate } from "@/components/fx/Celebration";
+import { haptic } from "@/lib/haptics";
+import { sfx } from "@/lib/sfx";
 import type { OrbMood } from "@/components/companion/AIAHOrb";
 
 type RitualKind = "morning" | "evening";
@@ -60,7 +62,7 @@ export function RitualModal() {
     const hour = now.getHours();
     const last = getLast();
 
-    // Don't auto-trigger immediately on first load — wait a moment
+    // Don't auto-trigger immediately on first load - wait a moment
     const timer = setTimeout(() => {
       if (hour >= 5 && hour < 12 && last.morning !== today) {
         setKind("morning");
@@ -109,27 +111,34 @@ export function RitualModal() {
 
   const quests = kind === "morning" ? getTodayQuests().slice(0, 3) : [];
 
+  const advance = (to: number) => {
+    haptic("tap");
+    sfx.chime();
+    setStep(to);
+  };
+
   return (
     <AnimatePresence>
       {open && (
-        <>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: 0.22 }}
             onClick={close}
-            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-md"
+            className="absolute inset-0 bg-black/60 backdrop-blur-md"
           />
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            initial={{ opacity: 0, scale: 0.92, y: 16 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ type: "spring", stiffness: 220, damping: 25 }}
-            className="fixed left-1/2 top-1/2 z-50 w-[92vw] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-2xl dark:border-stone-800 dark:bg-stone-900"
+            exit={{ opacity: 0, scale: 0.94, y: 8 }}
+            transition={{ type: "spring", stiffness: 360, damping: 28, mass: 0.6 }}
+            className="relative w-full max-w-md overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-2xl dark:border-stone-800 dark:bg-stone-900"
           >
             <button
               onClick={close}
-              className="absolute right-3 top-3 z-10 rounded-lg p-1 text-stone-500 hover:bg-stone-100 dark:hover:bg-stone-800"
+              className="absolute right-3 top-3 z-10 rounded-lg p-1 text-stone-500 transition-colors hover:bg-stone-100 dark:hover:bg-stone-800"
             >
               <X className="h-5 w-5" />
             </button>
@@ -156,12 +165,15 @@ export function RitualModal() {
                       ? "A quick mood check, then I'll show you today's wins."
                       : "A pause before you close the day."}
                   </p>
-                  <button
-                    onClick={() => setStep(1)}
-                    className="mt-4 flex items-center gap-2 rounded-full bg-[#1D9E75] px-6 py-3 text-sm font-semibold text-white hover:bg-[#0f6b4f]"
+                  <motion.button
+                    onClick={() => advance(1)}
+                    whileTap={{ scale: 0.94 }}
+                    whileHover={{ scale: 1.03 }}
+                    transition={{ type: "spring", stiffness: 500, damping: 22 }}
+                    className="mt-4 flex items-center gap-2 rounded-full bg-[#1D9E75] px-6 py-3 text-sm font-semibold text-white shadow-[0_6px_20px_-6px_rgba(29,158,117,0.55)] hover:bg-[#0f6b4f]"
                   >
                     Begin <ArrowRight className="h-4 w-4" />
-                  </button>
+                  </motion.button>
                 </motion.div>
               )}
 
@@ -188,12 +200,14 @@ export function RitualModal() {
                       );
                     })}
                   </div>
-                  <button
-                    onClick={() => setStep(2)}
-                    className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#1D9E75] py-3 text-sm font-semibold text-white hover:bg-[#0f6b4f]"
+                  <motion.button
+                    onClick={() => advance(2)}
+                    whileTap={{ scale: 0.97 }}
+                    transition={{ type: "spring", stiffness: 500, damping: 22 }}
+                    className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#1D9E75] py-3 text-sm font-semibold text-white shadow-[0_6px_20px_-6px_rgba(29,158,117,0.5)] hover:bg-[#0f6b4f]"
                   >
                     Continue <ArrowRight className="h-4 w-4" />
-                  </button>
+                  </motion.button>
                 </motion.div>
               )}
 

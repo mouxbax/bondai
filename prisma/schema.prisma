@@ -149,7 +149,7 @@ model Conversation {
   updatedAt   DateTime         @updatedAt
   lastReadAt  DateTime?
   crisisFlaggedAt      DateTime? // user message tripped crisis detection (server-side)
-  crisisFollowUpDueAt  DateTime? // next UTC midnight — cue for tomorrow check-in follow-up
+  crisisFollowUpDueAt  DateTime? // next UTC midnight - cue for tomorrow check-in follow-up
 
   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   messages Message[]

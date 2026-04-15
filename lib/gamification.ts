@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Gamification core — XP, levels, life score, achievements.
+ * Gamification core - XP, levels, life score, achievements.
  * All persisted to localStorage for zero-friction iteration.
  */
 

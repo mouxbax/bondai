@@ -1,16 +1,22 @@
 "use client";
 
 import * as React from "react";
+import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { CRISIS_RESOURCES } from "@/lib/ai/crisis";
 import { CrisisModal } from "@/components/layout/CrisisModal";
 import { ChatWindow } from "@/components/chat/ChatWindow";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { CoachingSession } from "@/components/coaching/CoachingSession";
-import { VoiceConversation } from "@/components/chat/VoiceConversation";
 import { useChat } from "@/hooks/useChat";
 import { getScenarioById } from "@/lib/coaching-scenarios";
 import type { ConversationType } from "@prisma/client";
+
+// Voice UI is heavy (MediaRecorder + AudioContext + framer-motion orb). Load only when opened.
+const VoiceConversation = dynamic(
+  () => import("@/components/chat/VoiceConversation").then((m) => m.VoiceConversation),
+  { ssr: false },
+);
 
 interface ChatRoomProps {
   conversationId: string;

@@ -29,7 +29,7 @@ const moodLines: Record<string, string[]> = {
   calm: ["I'm right here with you.", "Take a slow breath. I'm listening.", "A quiet moment. What's on your mind?"],
   happy: ["Love the energy today.", "Let's make it count.", "Ready when you are."],
   focused: ["Locked in. Let's go.", "Deep work mode. I've got you.", "Tell me the one thing that matters now."],
-  energetic: ["Big energy — let's channel it.", "What are we crushing today?", "Momentum is a gift. Use it."],
+  energetic: ["Big energy, let's channel it.", "What are we crushing today?", "Momentum is a gift. Use it."],
   tender: ["Go easy on yourself.", "I'm here, no pressure.", "Small steps count."],
   anxious: ["Breathe with me. You're safe.", "One thing at a time.", "Let's slow things down together."],
   sad: ["I'm here. No rush.", "Heavy days happen. Still here.", "You don't have to figure it all out right now."],
@@ -96,7 +96,7 @@ export function CompanionHome({ firstName }: CompanionHomeProps) {
           </motion.div>
           <MoodSelector />
 
-          {/* Primary quick actions — the three things you can always do */}
+          {/* Primary quick actions - the three things you can always do */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}

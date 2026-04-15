@@ -6,8 +6,8 @@ import { prisma } from "@/lib/db/prisma";
 export const dynamic = "force-dynamic";
 
 /**
- * GET  /api/account  — return the current user's profile fields.
- * PATCH /api/account — update any subset of profile fields.
+ * GET  /api/account  - return the current user's profile fields.
+ * PATCH /api/account - update any subset of profile fields.
  */
 
 export async function GET() {
@@ -99,11 +99,11 @@ export async function PATCH(req: Request) {
 }
 
 /**
- * DELETE /api/account — permanently remove the current user.
+ * DELETE /api/account - permanently remove the current user.
  *
  * Cascades through Account, Session, Conversation, Message, SocialGoal,
  * ConnectionEvent, UserStreak, CrisisLog (all `onDelete: Cascade` in schema).
- * Stripe subscription cleanup is intentionally out of scope here — surface
+ * Stripe subscription cleanup is intentionally out of scope here - surface
  * a separate flow if you ever need to cancel paid subs at the same time.
  */
 export async function DELETE() {
@@ -115,7 +115,7 @@ export async function DELETE() {
   try {
     await prisma.user.delete({ where: { id: session.user.id } });
   } catch (e) {
-    // Already gone — treat as success so the client can still sign out cleanly.
+    // Already gone - treat as success so the client can still sign out cleanly.
     const code = (e as { code?: string })?.code;
     if (code !== "P2025") {
       return NextResponse.json(

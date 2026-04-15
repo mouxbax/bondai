@@ -14,7 +14,7 @@ export function Step5Voice({
   React.useEffect(() => {
     if (voice && typeof navigator !== "undefined" && navigator.mediaDevices?.getUserMedia) {
       void navigator.mediaDevices.getUserMedia({ audio: true }).catch(() => {
-        /* user may deny — still allow toggle */
+        /* user may deny - still allow toggle */
       });
     }
   }, [voice]);

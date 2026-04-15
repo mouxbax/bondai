@@ -58,7 +58,7 @@ export function passwordResetEmail(resetUrl: string, name?: string | null): { su
     `If it was you, open this link within the next 60 minutes:\n\n` +
     `${resetUrl}\n\n` +
     `If it wasn't you, you can safely ignore this email.\n\n` +
-    `— AIAH`;
+    `- AIAH`;
   const html = `
 <!doctype html>
 <html>
@@ -76,10 +76,10 @@ export function passwordResetEmail(resetUrl: string, name?: string | null): { su
         <span style="color:#1D9E75;word-break:break-all;">${resetUrl}</span>
       </p>
       <p style="font-size:14px;line-height:1.6;color:#666;margin:24px 0 0 0;">
-        If you didn't request this, you can safely ignore this email — your password won't change.
+        If you didn't request this, you can safely ignore this email - your password won't change.
       </p>
       <hr style="margin:32px 0;border:0;border-top:1px solid #e5e3df;">
-      <p style="font-size:12px;color:#999;margin:0;">AIAH — your AI companion for a better day.</p>
+      <p style="font-size:12px;color:#999;margin:0;">AIAH - your AI companion for a better day.</p>
     </div>
   </body>
 </html>`.trim();

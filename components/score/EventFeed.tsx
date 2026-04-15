@@ -28,7 +28,7 @@ export function EventFeed({
   }>;
 }) {
   if (events.length === 0) {
-    return <p className="text-sm text-stone-500 dark:text-stone-400">No events yet — your wins will show up here.</p>;
+    return <p className="text-sm text-stone-500 dark:text-stone-400">No events yet - your wins will show up here.</p>;
   }
 
   return (

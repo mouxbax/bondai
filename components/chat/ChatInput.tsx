@@ -4,6 +4,8 @@ import * as React from "react";
 import { motion } from "framer-motion";
 import { Send, Mic } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import { haptic } from "@/lib/haptics";
+import { sfx } from "@/lib/sfx";
 
 interface ChatInputProps {
   disabled?: boolean;
@@ -18,7 +20,14 @@ export function ChatInput({ disabled, onOpenVoice, onSend }: ChatInputProps) {
     const t = value.trim();
     if (!t) return;
     setValue("");
+    haptic("tap");
+    sfx.tap();
     onSend(t);
+  };
+
+  const openVoice = () => {
+    haptic("pop");
+    onOpenVoice();
   };
 
   return (
@@ -28,7 +37,7 @@ export function ChatInput({ disabled, onOpenVoice, onSend }: ChatInputProps) {
           type="button"
           whileTap={{ scale: 0.92 }}
           whileHover={{ scale: 1.04 }}
-          onClick={onOpenVoice}
+          onClick={openVoice}
           className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#1D9E75] to-emerald-500 text-white shadow-[0_6px_24px_-6px_rgba(29,158,117,0.55)] transition-shadow hover:shadow-[0_8px_32px_-4px_rgba(29,158,117,0.7)]"
           aria-label="Talk to AIAH"
           title="Open voice conversation"

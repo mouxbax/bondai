@@ -197,7 +197,7 @@ export function PeopleModule() {
                             : d === 0
                               ? "Contacted today"
                               : `${d}d ago`}
-                          {overdue && " — reach out"}
+                          {overdue && " - reach out"}
                         </span>
                       </div>
                     </div>

@@ -8,7 +8,7 @@
   },
   "landing": {
     "tagline": "A bridge back to real connection",
-    "title": "AIAH — An AI Companion for Deeper Relationships",
+    "title": "AIAH - An AI Companion for Deeper Relationships",
     "subtitle": "Remember your life. Coach your social skills. Connect with intention.",
     "description": "AIAH is an AI companion that remembers your life, coaches social skills, and nudges you toward real-world connection.",
     "cta.primary": "Start for free",
@@ -57,7 +57,7 @@
     "open_chats": "Open chats",
     "practice_scenario": "Practice a scenario",
     "log_interaction": "I did something!",
-    "interaction_help": "Log a tiny real-world step — coffee, a text, a hello. Small counts.",
+    "interaction_help": "Log a tiny real-world step - coffee, a text, a hello. Small counts.",
     "view_score": "View connection score",
     "goals_preview": "Active Goals"
   },

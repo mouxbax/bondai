@@ -285,7 +285,7 @@ export function AccountClient() {
                 onChange={(e) =>
                   update("age", e.target.value === "" ? null : Number(e.target.value))
                 }
-                placeholder="—"
+                placeholder="-"
               />
             </div>
           </div>
@@ -597,7 +597,7 @@ export function AccountClient() {
             Danger zone
           </CardTitle>
           <CardDescription className="text-rose-700/80 dark:text-rose-200/70">
-            Permanently delete your account and all associated data — conversations,
+            Permanently delete your account and all associated data - conversations,
             goals, streaks, check-ins. This cannot be undone.
           </CardDescription>
         </CardHeader>

@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Mic, Volume2 } from "lucide-react";
 import { AIAHOrb, type OrbMood } from "@/components/companion/AIAHOrb";
 import { useMood } from "@/lib/mood-context";
+import { haptic } from "@/lib/haptics";
 
 interface Message {
   role: "USER" | "ASSISTANT";
@@ -21,34 +22,100 @@ interface VoiceConversationProps {
   onClearError?: () => void;
 }
 
-type PhaseType = "idle" | "listening" | "thinking" | "speaking";
+type PhaseType = "idle" | "listening" | "transcribing" | "thinking" | "speaking";
 
-function getRecognitionCtor():
-  | (new () => SpeechRecognition)
-  | null {
-  if (typeof window === "undefined") return null;
-  const w = window as Window & {
-    webkitSpeechRecognition?: new () => SpeechRecognition;
-    SpeechRecognition?: new () => SpeechRecognition;
-  };
-  return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
+/** Silence detection thresholds */
+const SILENCE_RMS = 0.012;        // below this = "silent"
+const SILENCE_HANG_MS = 1600;      // trailing silence that ends a turn
+const MIN_UTTERANCE_MS = 500;      // ignore accidental taps
+const MAX_UTTERANCE_MS = 20000;    // hard cap per turn
+const PRE_ROLL_MS = 250;           // brief wait before arming so the orb lands
+
+function pickMimeType(): string | undefined {
+  if (typeof MediaRecorder === "undefined") return undefined;
+  const candidates = [
+    "audio/webm;codecs=opus",
+    "audio/webm",
+    "audio/ogg;codecs=opus",
+    "audio/mp4",
+    "audio/mpeg",
+  ];
+  for (const t of candidates) {
+    try {
+      if (MediaRecorder.isTypeSupported(t)) return t;
+    } catch {
+      /* some browsers throw on unknown types */
+    }
+  }
+  return undefined;
+}
+
+function normalizeForSpeech(text: string): string {
+  return text
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/[*_#>-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function splitSpeechChunks(text: string): string[] {
+  const clean = normalizeForSpeech(text);
+  if (!clean) return [];
+  const parts = clean.split(/(?<=[.!?])\s+/).filter(Boolean);
+  const chunks: string[] = [];
+  let current = "";
+  for (const part of parts) {
+    if ((current + " " + part).trim().length > 180) {
+      if (current.trim()) chunks.push(current.trim());
+      current = part;
+    } else {
+      current = `${current} ${part}`.trim();
+    }
+  }
+  if (current.trim()) chunks.push(current.trim());
+  return chunks;
 }
 
 /**
  * Full-screen immersive voice chat.
- * Auto-loop: listen → silence detected → send → wait → speak reply → listen again
+ * Flow: listen (MediaRecorder) → silence detected → POST /api/transcribe → onSend →
+ *       wait for assistant → speak via SpeechSynthesis → listen again.
+ *
+ * Works on iOS Safari (unlike the old Web Speech API version).
  */
-export function VoiceConversation({ open, onClose, messages, thinking, onSend, chatError, onClearError }: VoiceConversationProps) {
+export function VoiceConversation({
+  open,
+  onClose,
+  messages,
+  thinking,
+  onSend,
+  chatError,
+  onClearError,
+}: VoiceConversationProps) {
   const { theme } = useMood();
   const [phase, setPhase] = useState<PhaseType>("idle");
-  const [transcript, setTranscript] = useState("");
+  const [level, setLevel] = useState(0); // 0..1 mic amplitude (for viz)
   const [lastReply, setLastReply] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [voiceName, setVoiceName] = useState<string>("");
 
-  const recRef = useRef<SpeechRecognition | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const rafRef = useRef<number | null>(null);
+
+  const startedAtRef = useRef<number>(0);
+  const lastVoiceAtRef = useRef<number>(0);
+  const hasSpeechRef = useRef<boolean>(false);
+  const maxTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastMsgCountRef = useRef(0);
   const shouldLoopRef = useRef(true);
+  const listeningRef = useRef(false);
   const utterRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   // Pick the best voice available
@@ -57,7 +124,6 @@ export function VoiceConversation({ open, onClose, messages, thinking, onSend, c
     const setBest = () => {
       const voices = window.speechSynthesis.getVoices();
       if (voices.length === 0) return;
-      // Prefer natural-sounding English voices
       const preferred =
         voices.find((v) => /samantha|aria|jenny|natural|neural/i.test(v.name)) ||
         voices.find((v) => v.lang.startsWith("en") && v.localService) ||
@@ -79,139 +145,308 @@ export function VoiceConversation({ open, onClose, messages, thinking, onSend, c
         return;
       }
       window.speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(text);
-      u.rate = 1.02;
-      u.pitch = 1.0;
-      u.volume = 1.0;
       const voices = window.speechSynthesis.getVoices();
-      const v = voices.find((x) => x.name === voiceName);
-      if (v) u.voice = v;
-      u.onend = () => {
-        setPhase("idle");
-        onEnd?.();
-      };
-      u.onerror = () => {
-        setPhase("idle");
-        onEnd?.();
-      };
-      utterRef.current = u;
       setPhase("speaking");
-      window.speechSynthesis.speak(u);
+      const preferredVoice =
+        voices.find((x) => x.name === voiceName) ||
+        voices.find((x) => /samantha|aria|jenny|natural|neural/i.test(x.name)) ||
+        voices.find((x) => x.lang.startsWith("en"));
+
+      const chunks = splitSpeechChunks(text);
+      if (!chunks.length) {
+        setPhase("idle");
+        onEnd?.();
+        return;
+      }
+      let idx = 0;
+      const speakNext = () => {
+        if (idx >= chunks.length) {
+          setPhase("idle");
+          onEnd?.();
+          return;
+        }
+        const u = new SpeechSynthesisUtterance(chunks[idx]);
+        u.rate = 0.96;
+        u.pitch = 1.02;
+        u.volume = 1.0;
+        if (preferredVoice) u.voice = preferredVoice;
+        u.onend = () => {
+          idx += 1;
+          setTimeout(speakNext, 70);
+        };
+        u.onerror = () => {
+          setPhase("idle");
+          onEnd?.();
+        };
+        utterRef.current = u;
+        window.speechSynthesis.speak(u);
+      };
+      speakNext();
     },
     [voiceName],
   );
 
-  const startListening = useCallback(() => {
-    const Ctor = getRecognitionCtor();
-    if (!Ctor) {
-      setError("Speech recognition not supported in this browser.");
-      return;
+  // --- Recorder lifecycle ---------------------------------------------------
+
+  const teardownAudio = useCallback(() => {
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
     }
-    setError(null);
-    setTranscript("");
-    const rec = new Ctor();
-    rec.lang = navigator.language || "en-US";
-    rec.interimResults = true;
-    rec.continuous = false;
+    if (maxTimerRef.current) {
+      clearTimeout(maxTimerRef.current);
+      maxTimerRef.current = null;
+    }
+    try {
+      sourceRef.current?.disconnect();
+    } catch {}
+    sourceRef.current = null;
+    try {
+      analyserRef.current?.disconnect();
+    } catch {}
+    analyserRef.current = null;
+    const ctx = audioCtxRef.current;
+    if (ctx && ctx.state !== "closed") {
+      ctx.close().catch(() => {});
+    }
+    audioCtxRef.current = null;
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+    recorderRef.current = null;
+    chunksRef.current = [];
+    listeningRef.current = false;
+    setLevel(0);
+  }, []);
 
-    let finalText = "";
-
-    rec.onresult = (ev: SpeechRecognitionEvent) => {
-      let interim = "";
-      for (let i = ev.resultIndex; i < ev.results.length; i++) {
-        const r = ev.results[i];
-        if (r.isFinal) {
-          finalText += r[0].transcript;
-        } else {
-          interim += r[0].transcript;
+  const transcribeAndSend = useCallback(
+    async (blob: Blob) => {
+      setPhase("transcribing");
+      try {
+        const fd = new FormData();
+        fd.append("audio", blob, "speech.webm");
+        if (typeof navigator !== "undefined" && navigator.language) {
+          fd.append("language", navigator.language.split("-")[0] ?? "en");
         }
-      }
-      setTranscript((finalText + " " + interim).trim());
-    };
-
-    rec.onerror = (ev: SpeechRecognitionErrorEvent) => {
-      if (ev.error === "no-speech" || ev.error === "aborted") {
-        setPhase("idle");
-        return;
-      }
-      // Translate cryptic browser codes into human messages.
-      let msg: string;
-      switch (ev.error) {
-        case "network":
-          msg =
-            "Your browser's speech recognition couldn't reach the internet. Chrome/Safari send audio to Google to transcribe — it's blocked here. Use text mode instead.";
-          break;
-        case "not-allowed":
-        case "service-not-allowed":
-          msg = "Mic access was blocked. Allow microphone for this site in your browser settings.";
-          break;
-        case "audio-capture":
-          msg = "No microphone detected. Check your input device and try again.";
-          break;
-        case "language-not-supported":
-          msg = "Your system language isn't supported for voice. Switch browser language to English.";
-          break;
-        default:
-          msg = `Voice recognition error (${ev.error}). Try text mode instead.`;
-      }
-      shouldLoopRef.current = false;
-      setError(msg);
-      setPhase("idle");
-    };
-
-    rec.onend = () => {
-      const text = finalText.trim();
-      setTranscript("");
-      if (text) {
+        const res = await fetch("/api/transcribe", { method: "POST", body: fd });
+        if (!res.ok) {
+          const j = (await res.json().catch(() => ({}))) as { error?: string };
+          shouldLoopRef.current = false;
+          setError(
+            j.error ??
+              "Transcription failed. Try text mode instead, or check OPENAI_API_KEY on the server.",
+          );
+          setPhase("idle");
+          return;
+        }
+        const j = (await res.json()) as { text?: string };
+        const text = (j.text ?? "").trim();
+        if (!text) {
+          // Empty — silently re-arm if we're still open.
+          if (shouldLoopRef.current && open) {
+            setTimeout(() => {
+              if (shouldLoopRef.current && open) void startListening();
+            }, 300);
+          } else {
+            setPhase("idle");
+          }
+          return;
+        }
+        haptic("tap");
         setPhase("thinking");
         onSend(text);
-      } else if (shouldLoopRef.current && open) {
-        // No speech detected — restart listening
-        setTimeout(() => {
-          if (shouldLoopRef.current && open) startListening();
-        }, 400);
-      } else {
+      } catch {
+        shouldLoopRef.current = false;
+        setError("Network error while transcribing. Try text mode.");
         setPhase("idle");
       }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [onSend, open],
+  );
+
+  const stopListening = useCallback(
+    (reason: "silence" | "manual" | "abort" = "silence") => {
+      if (!listeningRef.current && reason !== "abort") return;
+      const rec = recorderRef.current;
+      listeningRef.current = false;
+      if (rec && rec.state !== "inactive") {
+        try {
+          rec.stop();
+        } catch {
+          /* noop */
+        }
+      } else {
+        // Nothing to flush — just clean up.
+        teardownAudio();
+        if (reason === "abort") setPhase("idle");
+      }
+    },
+    [teardownAudio],
+  );
+
+  const startListening = useCallback(async () => {
+    if (listeningRef.current) return;
+    if (typeof window === "undefined") return;
+    if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+      setError("Mic access not available in this browser.");
+      return;
+    }
+    if (typeof MediaRecorder === "undefined") {
+      setError("Audio recording is not supported in this browser.");
+      return;
+    }
+
+    setError(null);
+
+    let stream: MediaStream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
+    } catch (e) {
+      const err = e as DOMException;
+      if (err.name === "NotAllowedError" || err.name === "SecurityError") {
+        setError("Mic access was blocked. Allow microphone for this site in your browser settings.");
+      } else if (err.name === "NotFoundError") {
+        setError("No microphone detected. Check your input device and try again.");
+      } else {
+        setError("Could not access the microphone.");
+      }
+      shouldLoopRef.current = false;
+      setPhase("idle");
+      return;
+    }
+    streamRef.current = stream;
+
+    // Audio graph for silence detection + level meter
+    const Ctor =
+      (window as Window & { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext })
+        .AudioContext ??
+      (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!Ctor) {
+      setError("WebAudio isn't supported in this browser.");
+      teardownAudio();
+      return;
+    }
+    const ctx = new Ctor();
+    audioCtxRef.current = ctx;
+    if (ctx.state === "suspended") {
+      try {
+        await ctx.resume();
+      } catch {}
+    }
+    const source = ctx.createMediaStreamSource(stream);
+    sourceRef.current = source;
+    const analyser = ctx.createAnalyser();
+    analyser.fftSize = 2048;
+    analyserRef.current = analyser;
+    source.connect(analyser);
+
+    const mimeType = pickMimeType();
+    let rec: MediaRecorder;
+    try {
+      rec = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+    } catch {
+      setError("Could not start the recorder.");
+      teardownAudio();
+      return;
+    }
+    recorderRef.current = rec;
+    chunksRef.current = [];
+
+    rec.ondataavailable = (ev) => {
+      if (ev.data && ev.data.size > 0) chunksRef.current.push(ev.data);
+    };
+    rec.onstop = () => {
+      const chunks = chunksRef.current;
+      const type = rec.mimeType || mimeType || "audio/webm";
+      const durMs = Date.now() - startedAtRef.current;
+      teardownAudio();
+      if (!hasSpeechRef.current || durMs < MIN_UTTERANCE_MS || chunks.length === 0) {
+        // Too short / no voice — re-arm if still open
+        if (shouldLoopRef.current && open) {
+          setTimeout(() => {
+            if (shouldLoopRef.current && open) void startListening();
+          }, 250);
+        } else {
+          setPhase("idle");
+        }
+        return;
+      }
+      const blob = new Blob(chunks, { type });
+      void transcribeAndSend(blob);
     };
 
-    recRef.current = rec;
     try {
-      rec.start();
-      setPhase("listening");
+      rec.start(250); // emit chunks periodically so teardown has data even on rapid stops
     } catch {
-      setError("Could not start microphone.");
-      setPhase("idle");
+      setError("Could not start recording.");
+      teardownAudio();
+      return;
     }
-  }, [onSend, open]);
+
+    startedAtRef.current = Date.now();
+    lastVoiceAtRef.current = Date.now();
+    hasSpeechRef.current = false;
+    listeningRef.current = true;
+    setPhase("listening");
+    haptic("tap");
+
+    // Hard cap — never record longer than MAX_UTTERANCE_MS
+    maxTimerRef.current = setTimeout(() => {
+      if (listeningRef.current) stopListening("silence");
+    }, MAX_UTTERANCE_MS);
+
+    // RMS loop
+    const buffer = new Float32Array(analyser.fftSize);
+    const tick = () => {
+      if (!analyserRef.current || !listeningRef.current) return;
+      analyserRef.current.getFloatTimeDomainData(buffer);
+      let sum = 0;
+      for (let i = 0; i < buffer.length; i++) sum += buffer[i] * buffer[i];
+      const rms = Math.sqrt(sum / buffer.length);
+      setLevel(Math.min(1, rms * 6));
+      const now = Date.now();
+      if (rms > SILENCE_RMS) {
+        hasSpeechRef.current = true;
+        lastVoiceAtRef.current = now;
+      } else if (hasSpeechRef.current && now - lastVoiceAtRef.current > SILENCE_HANG_MS) {
+        stopListening("silence");
+        return;
+      }
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+  }, [open, stopListening, teardownAudio, transcribeAndSend]);
 
   // On open: kick off the loop
   useEffect(() => {
     if (!open) {
       shouldLoopRef.current = false;
-      if (recRef.current) {
+      if (recorderRef.current && recorderRef.current.state !== "inactive") {
         try {
-          (recRef.current as SpeechRecognition & { abort?: () => void }).abort?.();
-          recRef.current.stop();
-        } catch {
-          /* */
-        }
+          recorderRef.current.stop();
+        } catch {}
       }
+      teardownAudio();
       if (typeof window !== "undefined" && window.speechSynthesis) {
         window.speechSynthesis.cancel();
       }
       setPhase("idle");
-      setTranscript("");
       return;
     }
 
     shouldLoopRef.current = true;
     lastMsgCountRef.current = messages.length;
-    // Small delay so orb can settle in
     const t = setTimeout(() => {
-      if (shouldLoopRef.current) startListening();
-    }, 600);
-
+      if (shouldLoopRef.current) void startListening();
+    }, PRE_ROLL_MS);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
@@ -227,17 +462,17 @@ export function VoiceConversation({ open, onClose, messages, thinking, onSend, c
         speak(last.content, () => {
           if (shouldLoopRef.current && open) {
             setTimeout(() => {
-              if (shouldLoopRef.current && open) startListening();
-            }, 500);
+              if (shouldLoopRef.current && open) void startListening();
+            }, 400);
           }
         });
       }
     }
   }, [messages, open, speak, startListening]);
 
-  // Sync phase with thinking state
+  // Sync phase with thinking state from the parent
   useEffect(() => {
-    if (open && thinking && phase !== "speaking") {
+    if (open && thinking && phase !== "speaking" && phase !== "transcribing") {
       setPhase("thinking");
     }
   }, [thinking, open, phase]);
@@ -246,41 +481,37 @@ export function VoiceConversation({ open, onClose, messages, thinking, onSend, c
   useEffect(() => {
     if (open && chatError) {
       shouldLoopRef.current = false;
-      if (recRef.current) {
+      if (recorderRef.current && recorderRef.current.state !== "inactive") {
         try {
-          (recRef.current as SpeechRecognition & { abort?: () => void }).abort?.();
-          recRef.current.stop();
-        } catch {
-          /* */
-        }
+          recorderRef.current.stop();
+        } catch {}
       }
+      teardownAudio();
       if (typeof window !== "undefined" && window.speechSynthesis) {
         window.speechSynthesis.cancel();
       }
       setPhase("idle");
       setError(chatError);
     }
-  }, [chatError, open]);
+  }, [chatError, open, teardownAudio]);
 
   const retry = () => {
     setError(null);
     onClearError?.();
     shouldLoopRef.current = true;
     setTimeout(() => {
-      if (shouldLoopRef.current && open) startListening();
+      if (shouldLoopRef.current && open) void startListening();
     }, 200);
   };
 
   const handleClose = () => {
     shouldLoopRef.current = false;
-    if (recRef.current) {
+    if (recorderRef.current && recorderRef.current.state !== "inactive") {
       try {
-        (recRef.current as SpeechRecognition & { abort?: () => void }).abort?.();
-        recRef.current.stop();
-      } catch {
-        /* */
-      }
+        recorderRef.current.stop();
+      } catch {}
     }
+    teardownAudio();
     if (typeof window !== "undefined" && window.speechSynthesis) {
       window.speechSynthesis.cancel();
     }
@@ -288,32 +519,42 @@ export function VoiceConversation({ open, onClose, messages, thinking, onSend, c
   };
 
   const tapToToggle = () => {
+    haptic("tap");
     if (phase === "listening") {
-      // Stop listening manually (submits what we have)
-      recRef.current?.stop();
+      stopListening("manual");
     } else if (phase === "speaking") {
-      // Skip speech, go back to listening
       if (typeof window !== "undefined" && window.speechSynthesis) {
         window.speechSynthesis.cancel();
       }
       setPhase("idle");
-      setTimeout(() => startListening(), 200);
+      setTimeout(() => void startListening(), 150);
     } else if (phase === "idle") {
-      startListening();
+      void startListening();
     }
   };
 
   const orbMood: OrbMood =
-    phase === "listening" ? "focused" : phase === "thinking" ? "tender" : phase === "speaking" ? "happy" : "calm";
+    phase === "listening"
+      ? "focused"
+      : phase === "transcribing" || phase === "thinking"
+        ? "tender"
+        : phase === "speaking"
+          ? "happy"
+          : "calm";
 
   const phaseLabel =
     phase === "listening"
       ? "I'm listening"
-      : phase === "thinking"
-        ? "Thinking..."
-        : phase === "speaking"
-          ? "Speaking"
-          : "Tap orb to talk";
+      : phase === "transcribing"
+        ? "Hearing you..."
+        : phase === "thinking"
+          ? "Thinking..."
+          : phase === "speaking"
+            ? "Speaking"
+            : "Tap orb to talk";
+
+  const orbSize = 240;
+  const ringScale = 1 + level * 0.35;
 
   return (
     <AnimatePresence>
@@ -331,10 +572,15 @@ export function VoiceConversation({ open, onClose, messages, thinking, onSend, c
               className="absolute left-1/2 top-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-30 blur-3xl"
               style={{ background: theme.accent }}
               animate={{
-                scale: phase === "listening" ? [1, 1.15, 1] : phase === "speaking" ? [1, 1.2, 1] : [1, 1.05, 1],
+                scale:
+                  phase === "listening"
+                    ? [1, 1 + level * 0.3, 1]
+                    : phase === "speaking"
+                      ? [1, 1.2, 1]
+                      : [1, 1.05, 1],
               }}
               transition={{
-                duration: phase === "listening" ? 1.5 : phase === "speaking" ? 1 : 4,
+                duration: phase === "listening" ? 0.6 : phase === "speaking" ? 1 : 4,
                 repeat: Infinity,
                 ease: "easeInOut",
               }}
@@ -357,14 +603,24 @@ export function VoiceConversation({ open, onClose, messages, thinking, onSend, c
 
           {/* Orb + phase */}
           <div className="relative z-10 flex flex-col items-center gap-6">
-            <motion.button
-              onClick={tapToToggle}
-              whileTap={{ scale: 0.97 }}
-              className="cursor-pointer"
-              aria-label="Toggle voice"
-            >
-              <AIAHOrb mood={orbMood} size={240} />
-            </motion.button>
+            <div className="relative">
+              {phase === "listening" && (
+                <motion.div
+                  className="pointer-events-none absolute inset-0 rounded-full border-2 border-[#1D9E75]/60"
+                  style={{ width: orbSize, height: orbSize }}
+                  animate={{ scale: ringScale, opacity: 0.4 + level * 0.5 }}
+                  transition={{ type: "spring", stiffness: 120, damping: 14 }}
+                />
+              )}
+              <motion.button
+                onClick={tapToToggle}
+                whileTap={{ scale: 0.97 }}
+                className="cursor-pointer"
+                aria-label="Toggle voice"
+              >
+                <AIAHOrb mood={orbMood} size={orbSize} />
+              </motion.button>
+            </div>
 
             <motion.div
               key={phase}
@@ -373,11 +629,11 @@ export function VoiceConversation({ open, onClose, messages, thinking, onSend, c
               className="text-center"
             >
               <p className={`text-xl font-medium ${theme.text}`}>{phaseLabel}</p>
-              {phase === "listening" && transcript && (
-                <p className={`mt-2 max-w-md px-6 text-sm italic ${theme.textMuted}`}>&ldquo;{transcript}&rdquo;</p>
-              )}
               {phase === "speaking" && lastReply && (
-                <p className={`mt-2 max-w-md px-6 text-sm ${theme.textMuted}`}>{lastReply.slice(0, 140)}{lastReply.length > 140 ? "..." : ""}</p>
+                <p className={`mt-2 max-w-md px-6 text-sm ${theme.textMuted}`}>
+                  {lastReply.slice(0, 140)}
+                  {lastReply.length > 140 ? "..." : ""}
+                </p>
               )}
             </motion.div>
 
@@ -417,7 +673,7 @@ export function VoiceConversation({ open, onClose, messages, thinking, onSend, c
                   ? "Pause when you're done"
                   : phase === "speaking"
                     ? "Tap orb to interrupt"
-                    : phase === "thinking"
+                    : phase === "thinking" || phase === "transcribing"
                       ? "One moment..."
                       : "Tap the orb to start"}
               </span>

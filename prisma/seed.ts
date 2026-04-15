@@ -49,7 +49,7 @@ async function main() {
         conversationId: checkin.id,
         role: MessageRole.ASSISTANT,
         content:
-          "Hey Alex — good to see you. Yesterday you mentioned wanting a calmer morning walk. What’s one small moment from today that felt a little lighter?",
+          "Hey Alex - good to see you. Yesterday you mentioned wanting a calmer morning walk. What’s one small moment from today that felt a little lighter?",
       },
       {
         conversationId: checkin.id,
@@ -61,7 +61,7 @@ async function main() {
         conversationId: checkin.id,
         role: MessageRole.ASSISTANT,
         content:
-          "That counts — a lot. What did you notice in your body right after you said it? And what’s one tiny next step with a real person you could try before bed?",
+          "That counts - a lot. What did you notice in your body right after you said it? And what’s one tiny next step with a real person you could try before bed?",
       },
       {
         conversationId: checkin.id,
@@ -87,19 +87,19 @@ async function main() {
         conversationId: coaching.id,
         role: MessageRole.ASSISTANT,
         content:
-          "Hey! I think we’re on the same floor — I’m Jamie. [Coaching: open with something observational and short.]",
+          "Hey! I think we’re on the same floor - I’m Jamie. [Coaching: open with something observational and short.]",
       },
       {
         conversationId: coaching.id,
         role: MessageRole.USER,
-        content: "Oh hi — yeah, I just moved in last week. I’m Alex.",
+        content: "Oh hi - yeah, I just moved in last week. I’m Alex.",
         emotionTag: EmotionTag.ANXIOUS,
       },
       {
         conversationId: coaching.id,
         role: MessageRole.ASSISTANT,
         content:
-          "Welcome! How are you settling in? [Coaching: invite a low-stakes answer — not too broad.]",
+          "Welcome! How are you settling in? [Coaching: invite a low-stakes answer - not too broad.]",
       },
       {
         conversationId: coaching.id,
@@ -111,12 +111,12 @@ async function main() {
         conversationId: coaching.id,
         role: MessageRole.ASSISTANT,
         content:
-          "That’s a win. If you want, I’m around — happy to recommend a good takeout spot. [Coaching: offer an easy exit cue so it doesn’t feel trapped.]",
+          "That’s a win. If you want, I’m around - happy to recommend a good takeout spot. [Coaching: offer an easy exit cue so it doesn’t feel trapped.]",
       },
       {
         conversationId: coaching.id,
         role: MessageRole.USER,
-        content: "That would be great — thanks. Have a good night.",
+        content: "That would be great - thanks. Have a good night.",
         emotionTag: EmotionTag.HAPPY,
       },
     ],
@@ -142,7 +142,7 @@ async function main() {
         conversationId: general.id,
         role: MessageRole.ASSISTANT,
         content:
-          "That sounds heavy — and pretty human after a move. When you say invisible, is it more in meetings, or more day-to-day small interactions?",
+          "That sounds heavy - and pretty human after a move. When you say invisible, is it more in meetings, or more day-to-day small interactions?",
       },
       {
         conversationId: general.id,
@@ -154,7 +154,7 @@ async function main() {
         conversationId: general.id,
         role: MessageRole.ASSISTANT,
         content:
-          "Ouch. One thing that sometimes helps is naming one ally and practicing a single sentence you could say after the meeting — not to perform, just to be seen. Who’s one person you wouldn’t mind sounding a little vulnerable to?",
+          "Ouch. One thing that sometimes helps is naming one ally and practicing a single sentence you could say after the meeting - not to perform, just to be seen. Who’s one person you wouldn’t mind sounding a little vulnerable to?",
       },
     ],
   });
@@ -174,7 +174,7 @@ async function main() {
       {
         userId: user.id,
         title: "Text my college friend Jamie",
-        description: "Send a no-pressure message — a meme counts.",
+        description: "Send a no-pressure message - a meme counts.",
         status: SocialGoalStatus.ACTIVE,
       },
       {
@@ -258,7 +258,7 @@ async function main() {
   });
 
   // eslint-disable-next-line no-console
-  console.log("Seed complete — demo user: demo@aiah.app");
+  console.log("Seed complete - demo user: demo@aiah.app");
 }
 
 main()

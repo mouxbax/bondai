@@ -24,13 +24,13 @@ const cardHover = {
 const features = [
   { icon: Sparkles, title: "Daily check-ins that remember you", desc: "Warm questions, gentle accountability, and tiny outward steps." },
   { icon: Users, title: "Social skills practice", desc: "Roleplay neighbors, coworkers, and boundaries with realistic pacing." },
-  { icon: HeartHandshake, title: "Connection score & goals", desc: "Track momentum without shame — celebrate real-world wins." },
+  { icon: HeartHandshake, title: "Connection score & goals", desc: "Track momentum without shame - celebrate real-world wins." },
 ];
 
 const tiers = [
   { name: "Free", price: "$0", desc: "Daily check-ins, coaching scenarios, goals, crisis resources." },
   { name: "Plus", price: "$9", desc: "Deeper memory, richer insights, priority model routing (coming soon)." },
-  { name: "Care+", price: "$19", desc: "For teams & communities — analytics and facilitator tools (coming soon)." },
+  { name: "Care+", price: "$19", desc: "For teams & communities - analytics and facilitator tools (coming soon)." },
 ];
 
 export function LandingContent() {
@@ -67,7 +67,7 @@ export function LandingContent() {
             variants={fadeUp}
             className="inline-flex rounded-full bg-[#1D9E75]/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[#0f6b4f] dark:text-emerald-200"
           >
-            AI as a bridge — not a replacement
+            AI as a bridge - not a replacement
           </motion.p>
 
           <motion.h1
@@ -88,7 +88,7 @@ export function LandingContent() {
             className="mx-auto max-w-2xl text-lg text-stone-600 dark:text-stone-300 md:mx-0"
           >
             AIAH checks in like a thoughtful friend, helps you practice real-world conversations, and nudges you toward
-            people — until you need us a little less.
+            people - until you need us a little less.
           </motion.p>
 
           <motion.div
@@ -151,7 +151,7 @@ export function LandingContent() {
         >
           <h2 className="text-xl font-semibold">Backed by research on loneliness</h2>
           <p className="mt-2 text-sm text-stone-600 dark:text-stone-300">
-            Loneliness is a global health priority — the WHO highlights social connection as protective for mental and physical
+            Loneliness is a global health priority - the WHO highlights social connection as protective for mental and physical
             health. AIAH is designed to reduce isolation by strengthening your confidence with people, not replacing them.
           </p>
         </motion.section>

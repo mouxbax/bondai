@@ -17,7 +17,7 @@ export function GoalsPreview({ goals }: { goals: SocialGoal[] }) {
       </CardHeader>
       <CardContent className="space-y-3">
         {top.length === 0 ? (
-          <p className="text-sm text-stone-500 dark:text-stone-400">No goals yet — add one from the Goals tab.</p>
+          <p className="text-sm text-stone-500 dark:text-stone-400">No goals yet - add one from the Goals tab.</p>
         ) : (
           top.map((g) => (
             <div key={g.id} className="flex items-start justify-between gap-2 rounded-xl bg-stone-50/80 p-3 dark:bg-stone-800/60">

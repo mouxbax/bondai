@@ -7,8 +7,8 @@ import { getCompanionConfig, setCompanionConfig } from "@/lib/companion-config";
 
 /**
  * Procedural ambient sound player using Web Audio API.
- * No external assets — generates rain/ocean/forest/lofi tones on the fly.
- * Requires user gesture to start — auto-resumes on first interaction.
+ * No external assets - generates rain/ocean/forest/lofi tones on the fly.
+ * Requires user gesture to start - auto-resumes on first interaction.
  */
 
 type Ambient = "none" | "rain" | "ocean" | "forest" | "lofi";
@@ -120,7 +120,7 @@ function startAmbient(ctx: AudioContext, kind: Ambient, destination: AudioNode):
     });
     nodes.push(noise, filter, gain);
   } else if (kind === "lofi") {
-    // Ambient drone pad — multiple detuned sines for warmth
+    // Ambient drone pad - multiple detuned sines for warmth
     const freqs = [164.81, 196, 246.94, 329.63]; // E3 G3 B3 E4 (E minor)
     const master = ctx.createGain();
     master.gain.value = 0.25;

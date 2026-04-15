@@ -11,7 +11,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "AIAH — A bridge back to real connection",
+  title: "AIAH - A bridge back to real connection",
   description:
     "Your AI companion that remembers your life, coaches social skills, and nudges you toward real-world connection.",
   manifest: "/manifest.json",

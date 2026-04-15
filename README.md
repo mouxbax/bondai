@@ -1,6 +1,6 @@
 # BondAI
 
-BondAI is a mobile-first PWA that uses AI as a **bridge** toward real human connection: daily check-ins, social coaching roleplay, goals, and a connection score — with crisis-aware guardrails.
+BondAI is a mobile-first PWA that uses AI as a **bridge** toward real human connection: daily check-ins, social coaching roleplay, goals, and a connection score - with crisis-aware guardrails.
 
 ## Stack
 
@@ -56,15 +56,15 @@ When OAuth is **not** configured and `NODE_ENV` is `development`, a **Dev sign-i
 
 Key paths:
 
-- `app/(app)/*` — authenticated shell (home, chat, coaching, goals, score)
-- `app/api/*` — REST-style API routes (chat streaming, goals, score, crisis logging)
-- `lib/ai/*` — OpenRouter client, prompts, emotion/crisis helpers
-- `prisma/schema.prisma` — data model
-- `public/manifest.json` — PWA manifest
+- `app/(app)/*` - authenticated shell (home, chat, coaching, goals, score)
+- `app/api/*` - REST-style API routes (chat streaming, goals, score, crisis logging)
+- `lib/ai/*` - OpenRouter client, prompts, emotion/crisis helpers
+- `prisma/schema.prisma` - data model
+- `public/manifest.json` - PWA manifest
 
 ## Safety
 
-Crisis detection logs metadata **only to your database** when a risky user message is processed in **`POST /api/chat`** (and the conversation is flagged for a gentle follow-up on the next UTC day). The UI still shows helpline resources. It does **not** notify third parties — privacy is essential for trust. `POST /api/crisis` remains available if you need additional client-side logging.
+Crisis detection logs metadata **only to your database** when a risky user message is processed in **`POST /api/chat`** (and the conversation is flagged for a gentle follow-up on the next UTC day). The UI still shows helpline resources. It does **not** notify third parties - privacy is essential for trust. `POST /api/crisis` remains available if you need additional client-side logging.
 
 ## License
 

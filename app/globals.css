@@ -26,7 +26,7 @@ body {
     text-wrap: balance;
   }
 
-  /* Soft glass card — replaces clinical bordered boxes */
+  /* Soft glass card - replaces clinical bordered boxes */
   .soft-card {
     @apply rounded-3xl bg-white/70 shadow-[0_4px_24px_-8px_rgba(0,0,0,0.08)] backdrop-blur-xl;
   }

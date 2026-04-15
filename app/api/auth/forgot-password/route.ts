@@ -12,7 +12,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Please enter a valid email address." }, { status: 400 });
     }
 
-    // Always respond OK — we don't want to leak whether the email exists.
+    // Always respond OK - we don't want to leak whether the email exists.
     const genericOk = { ok: true, message: "If an account with that email exists, we've sent a reset link." };
 
     const user = await prisma.user.findUnique({ where: { email } });

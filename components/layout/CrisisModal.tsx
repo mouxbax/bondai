@@ -28,7 +28,7 @@ export function CrisisModal({ open, payload, resources, onDismiss, onNeedSupport
         <DialogHeader>
           <DialogTitle>I want to make sure you&apos;re okay.</DialogTitle>
           <DialogDescription>
-            If you&apos;re in immediate danger, contact local emergency services. You deserve support — these resources
+            If you&apos;re in immediate danger, contact local emergency services. You deserve support - these resources
             are free and confidential.
           </DialogDescription>
         </DialogHeader>

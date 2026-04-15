@@ -42,7 +42,7 @@ export function DailyCheckinCard({
             <div>
               <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-50">Your daily check-in</h2>
               <p className="text-sm text-stone-600 dark:text-stone-300">
-                A few minutes to notice your day — and one small step toward real life.
+                A few minutes to notice your day - and one small step toward real life.
               </p>
             </div>
           </div>

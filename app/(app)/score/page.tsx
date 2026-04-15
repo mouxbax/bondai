@@ -58,7 +58,7 @@ export default function ScorePage() {
                 <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-50">Badges</h2>
                 <div className="flex flex-wrap gap-2">
                   {data.badges.length === 0 ? (
-                    <p className="text-sm text-stone-500">Keep going — badges unlock as you connect.</p>
+                    <p className="text-sm text-stone-500">Keep going - badges unlock as you connect.</p>
                   ) : (
                     data.badges.map((b, i) => (
                       <motion.div

@@ -2,6 +2,8 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useCallback, createContext, useContext, type ReactNode } from "react";
+import { haptic } from "@/lib/haptics";
+import { sfx } from "@/lib/sfx";
 
 /**
  * Global celebration system.
@@ -92,12 +94,16 @@ export function CelebrationProvider({ children }: { children: ReactNode }) {
     const cy = y ?? (typeof window !== "undefined" ? window.innerHeight / 2 : 200);
     const popup: XPPopup = { id: Date.now() + Math.random(), amount, x: cx, y: cy };
     setPopups((p) => [...p, popup]);
+    haptic("pop");
+    sfx.xp();
     setTimeout(() => setPopups((p) => p.filter((x) => x.id !== popup.id)), 1400);
   }, []);
 
   const levelUp = useCallback(
     (level: number) => {
       setLevelUpState({ id: Date.now(), level });
+      haptic("success");
+      sfx.fanfare();
       confetti();
       setTimeout(() => confetti(), 300);
       setTimeout(() => confetti(), 600);
@@ -109,6 +115,8 @@ export function CelebrationProvider({ children }: { children: ReactNode }) {
   const achievement = useCallback((emoji: string, name: string, description: string) => {
     const toast: AchievementToast = { id: Date.now() + Math.random(), emoji, name, description };
     setAchievements((a) => [...a, toast]);
+    haptic("success");
+    sfx.fanfare();
     setTimeout(() => setAchievements((a) => a.filter((t) => t.id !== toast.id)), 4000);
   }, []);
 

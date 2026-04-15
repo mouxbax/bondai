@@ -6,7 +6,7 @@ import { prisma } from "@/lib/db/prisma";
 export const dynamic = "force-dynamic";
 
 /**
- * POST /api/account/password — change the signed-in user's password.
+ * POST /api/account/password - change the signed-in user's password.
  * Body: { currentPassword: string, newPassword: string }
  *
  * Only works for accounts that were created with the email-password provider.

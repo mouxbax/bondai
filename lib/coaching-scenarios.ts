@@ -25,7 +25,7 @@ export const COACHING_SCENARIOS: CoachingScenarioMeta[] = [
   {
     id: "reconnect",
     title: "Reconnecting with an old friend",
-    description: "Reach out warmly after time apart — no guilt, no pressure.",
+    description: "Reach out warmly after time apart - no guilt, no pressure.",
     difficulty: 2,
     minutes: 10,
   },

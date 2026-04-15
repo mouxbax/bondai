@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { EmotionTag } from "@prisma/client";
 import type { CrisisPayload } from "@/types";
 
@@ -13,6 +13,119 @@ export interface ChatMessageRow {
   voiceUsed: boolean;
 }
 
+interface RuntimeChatContext {
+  locationLabel?: string;
+  localDateTime?: string;
+  weatherSummary?: string;
+}
+
+let cachedRuntimeContext: RuntimeChatContext | undefined;
+let runtimeContextFetchedAt = 0;
+let runtimeContextInFlight: Promise<void> | null = null;
+
+function weatherCodeToText(code: number): string {
+  if (code === 0) return "clear";
+  if ([1, 2, 3].includes(code)) return "partly cloudy";
+  if ([45, 48].includes(code)) return "foggy";
+  if ([51, 53, 55, 56, 57].includes(code)) return "drizzle";
+  if ([61, 63, 65, 66, 67].includes(code)) return "rain";
+  if ([71, 73, 75, 77].includes(code)) return "snow";
+  if ([80, 81, 82].includes(code)) return "rain showers";
+  if ([95, 96, 99].includes(code)) return "thunderstorm";
+  return "mixed conditions";
+}
+
+async function getRuntimeContext(): Promise<RuntimeChatContext | undefined> {
+  if (typeof window === "undefined") return undefined;
+  const localDateTime = new Date().toLocaleString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+
+  if (!("geolocation" in navigator)) {
+    return { localDateTime };
+  }
+
+  const position = await new Promise<GeolocationPosition | null>((resolve) => {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => resolve(pos),
+      () => resolve(null),
+      { enableHighAccuracy: false, timeout: 1200, maximumAge: 300000 },
+    );
+  });
+
+  if (!position) return { localDateTime };
+  const lat = position.coords.latitude;
+  const lon = position.coords.longitude;
+
+  let locationLabel = `${lat.toFixed(2)}, ${lon.toFixed(2)}`;
+  let weatherSummary: string | undefined;
+  try {
+    const [geoRes, weatherRes] = await Promise.all([
+      fetch(
+        `https://geocoding-api.open-meteo.com/v1/reverse?latitude=${lat}&longitude=${lon}&count=1&language=en&format=json`,
+      ),
+      fetch(
+        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code,wind_speed_10m&timezone=auto`,
+      ),
+    ]);
+    if (geoRes.ok) {
+      const geo = (await geoRes.json()) as { results?: Array<{ name?: string; country?: string }> };
+      const first = geo.results?.[0];
+      if (first?.name && first?.country) locationLabel = `${first.name}, ${first.country}`;
+      else if (first?.name) locationLabel = first.name;
+    }
+    if (weatherRes.ok) {
+      const weather = (await weatherRes.json()) as {
+        current?: { temperature_2m?: number; weather_code?: number; wind_speed_10m?: number };
+      };
+      const current = weather.current;
+      if (current?.temperature_2m !== undefined && current?.weather_code !== undefined) {
+        const condition = weatherCodeToText(current.weather_code);
+        const wind = current.wind_speed_10m !== undefined ? `, wind ${Math.round(current.wind_speed_10m)} km/h` : "";
+        weatherSummary = `${Math.round(current.temperature_2m)}C, ${condition}${wind}`;
+      }
+    }
+  } catch {
+    // Best-effort context only.
+  }
+
+  return { localDateTime, locationLabel, weatherSummary };
+}
+
+async function refreshRuntimeContext(): Promise<void> {
+  const next = await getRuntimeContext();
+  if (next) {
+    cachedRuntimeContext = next;
+    runtimeContextFetchedAt = Date.now();
+  }
+}
+
+function getFastRuntimeContext(): RuntimeChatContext | undefined {
+  if (typeof window === "undefined") return undefined;
+  const localDateTime = new Date().toLocaleString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+  const shouldRefresh = Date.now() - runtimeContextFetchedAt > 10 * 60 * 1000;
+  if (shouldRefresh && !runtimeContextInFlight) {
+    runtimeContextInFlight = refreshRuntimeContext().finally(() => {
+      runtimeContextInFlight = null;
+    });
+  }
+  return {
+    localDateTime,
+    locationLabel: cachedRuntimeContext?.locationLabel,
+    weatherSummary: cachedRuntimeContext?.weatherSummary,
+  };
+}
+
 export function useChat(conversationId: string | null) {
   const [messages, setMessages] = useState<ChatMessageRow[]>([]);
   const [streaming, setStreaming] = useState("");
@@ -23,6 +136,14 @@ export function useChat(conversationId: string | null) {
     crisis?: CrisisPayload | null;
   } | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && !runtimeContextInFlight && !cachedRuntimeContext) {
+      runtimeContextInFlight = refreshRuntimeContext().finally(() => {
+        runtimeContextInFlight = null;
+      });
+    }
+  }, []);
 
   const load = useCallback(async () => {
     if (!conversationId) return;
@@ -58,6 +179,7 @@ export function useChat(conversationId: string | null) {
 
       let res: Response;
       try {
+        const context = getFastRuntimeContext();
         res = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -66,6 +188,7 @@ export function useChat(conversationId: string | null) {
             content,
             useVoice: opts?.useVoice,
             bootstrap: opts?.bootstrap,
+            context,
           }),
           signal: ac.signal,
         });
@@ -178,7 +301,7 @@ export function useChat(conversationId: string | null) {
         }
         setStreaming("");
 
-        // Then reconcile with the server — this replaces optimistic rows with
+        // Then reconcile with the server - this replaces optimistic rows with
         // persisted ones. If the server write failed, the optimistic row stays.
         try {
           const reload = await fetch(`/api/chat/${conversationId}`, { cache: "no-store" });

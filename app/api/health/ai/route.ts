@@ -4,7 +4,7 @@ import { getOpenRouterClient, PRIMARY_MODEL, FALLBACK_MODEL } from "@/lib/ai/cli
 export const dynamic = "force-dynamic";
 
 /**
- * Diagnostic endpoint — hit /api/health/ai in a browser (or via curl) to
+ * Diagnostic endpoint - hit /api/health/ai in a browser (or via curl) to
  * verify that OpenRouter is reachable with the configured key. Returns JSON
  * describing which env vars are missing and whether a tiny completion works.
  *

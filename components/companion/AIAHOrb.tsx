@@ -115,7 +115,7 @@ export function AIAHOrb({
           </filter>
         </defs>
 
-        {/* Main orb body — morphing blob */}
+        {/* Main orb body - morphing blob */}
         <motion.g
           animate={{
             scale: active ? [1, 1.04, 0.98, 1.02, 1] : [1, 1.03, 1],

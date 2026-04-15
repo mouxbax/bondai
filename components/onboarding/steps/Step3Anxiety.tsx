@@ -29,7 +29,7 @@ export function Step3Anxiety({
       </div>
       <div className="space-y-2">
         <Label htmlFor="anx">Optional: tell me a bit about that</Label>
-        <Textarea id="anx" value={note} onChange={(e) => setNote(e.target.value)} placeholder="No pressure — a sentence is enough." />
+        <Textarea id="anx" value={note} onChange={(e) => setNote(e.target.value)} placeholder="No pressure - a sentence is enough." />
       </div>
     </div>
   );

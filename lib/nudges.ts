@@ -29,7 +29,7 @@ export async function generateNudges(userId: string): Promise<Nudge[]> {
   const todayStart = new Date(now);
   todayStart.setUTCHours(0, 0, 0, 0);
 
-  // 1. Check-in nudge — most important daily action
+  // 1. Check-in nudge - most important daily action
   const todayCheckin = await prisma.conversation.findFirst({
     where: { userId, type: "DAILY_CHECKIN", createdAt: { gte: todayStart } },
   });
@@ -40,7 +40,7 @@ export async function generateNudges(userId: string): Promise<Nudge[]> {
       id: "daily-checkin",
       type: "checkin",
       title: `Good ${timeOfDay}`,
-      message: "Take 2 minutes for your daily check-in — how are you really feeling today?",
+      message: "Take 2 minutes for your daily check-in - how are you really feeling today?",
       action: { label: "Start check-in", href: "/home" },
       priority: 10,
     });
@@ -86,7 +86,7 @@ export async function generateNudges(userId: string): Promise<Nudge[]> {
     });
   }
 
-  // 5. Stale goals — active goals older than 7 days with no recent events
+  // 5. Stale goals - active goals older than 7 days with no recent events
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   const staleGoals = user.socialGoals.filter(
     (g) => g.createdAt < weekAgo
@@ -123,7 +123,7 @@ export async function generateNudges(userId: string): Promise<Nudge[]> {
       id: "try-coaching",
       type: "coaching",
       title: "Practice makes confident",
-      message: "Try a coaching scenario — rehearse a tricky conversation in a safe space.",
+      message: "Try a coaching scenario - rehearse a tricky conversation in a safe space.",
       action: { label: "Start practicing", href: "/coaching" },
       priority: 3,
     });
@@ -145,7 +145,7 @@ export async function generateNudges(userId: string): Promise<Nudge[]> {
       id: "mood-pattern",
       type: "mood",
       title: "We see you",
-      message: "You've been going through a lot lately. Talking about it can help — even with AIAH.",
+      message: "You've been going through a lot lately. Talking about it can help - even with AIAH.",
       action: { label: "Check in now", href: "/home" },
       priority: 8,
     });

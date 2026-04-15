@@ -6,7 +6,7 @@ import { AIAHOrb } from "@/components/companion/AIAHOrb";
 import { getCompanionConfig } from "@/lib/companion-config";
 
 /**
- * Animated welcome splash — shows once per session when the app opens.
+ * Animated welcome splash - shows once per session when the app opens.
  * Dismisses on tap or auto-fades after 3.5s.
  */
 

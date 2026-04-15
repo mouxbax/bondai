@@ -1,6 +1,6 @@
 # BondAI Avatar UI - Comprehensive Technical Specification
 
-**Project:** BondAI — AI Companion App Fighting Loneliness  
+**Project:** BondAI - AI Companion App Fighting Loneliness  
 **Goal:** Transform chat-based UI into futuristic avatar-based companion experience  
 **Vision Year:** 2036-style AI life companion on your phone  
 **Date:** 2026-04-08
@@ -10,13 +10,13 @@
 ## 1. Vision & User Experience
 
 ### Core Interaction Model
-When a user opens BondAI, they see a **3D human-like avatar** ready to talk—not a chat interface. This is a **voice-first, emotion-responsive companion** experience.
+When a user opens BondAI, they see a **3D human-like avatar** ready to talk-not a chat interface. This is a **voice-first, emotion-responsive companion** experience.
 
 **Key Characteristics:**
 - **Presence:** Full-screen or near-full-screen 3D avatar that feels alive and responsive
 - **Voice-First:** Primary interaction via microphone; keyboard is secondary fallback
 - **Emotional Intelligence:** Avatar expresses emotions through facial expressions and subtle body language
-- **Lifelike Speech:** Avatar lips move, eyes blink, head tilts—synchronized with speech and user input
+- **Lifelike Speech:** Avatar lips move, eyes blink, head tilts-synchronized with speech and user input
 - **Always Listening:** Avatar is present and attentive, ready for the next conversation
 - **Ambient Presence:** Soft particles, glow effects, breathing animations when idle
 
@@ -35,9 +35,9 @@ When a user opens BondAI, they see a **3D human-like avatar** ready to talk—no
 ### 2.1 3D Avatar Rendering
 
 #### Stack
-- **React Three Fiber** (`@react-three/fiber`, `@react-three/drei`) — React abstraction for Three.js
-- **Three.js** (`three`) — 3D rendering engine
-- **Babylon.js** (optional) — Alternative if Three.js feels limiting for complex animations
+- **React Three Fiber** (`@react-three/fiber`, `@react-three/drei`) - React abstraction for Three.js
+- **Three.js** (`three`) - 3D rendering engine
+- **Babylon.js** (optional) - Alternative if Three.js feels limiting for complex animations
 
 #### Avatar Model Sourcing
 **Option A: Ready Player Me (Recommended)**
@@ -383,7 +383,7 @@ utterance.lang = langCode;
 
 | Tier      | Price    | Check-ins | Voice | Coaching | Avatar | Priority | Family |
 |-----------|----------|-----------|-------|----------|--------|----------|--------|
-| Free      | —        | 3/week    | ✗     | ✗        | 1      | ✗        | ✗      |
+| Free      | -        | 3/week    | ✗     | ✗        | 1      | ✗        | ✗      |
 | Plus      | $9/mo    | Unlimited | ✓     | ✓        | 3      | ✗        | ✗      |
 | Care+     | $19/mo   | Unlimited | ✓     | ✓        | 10     | ✓        | ✓      |
 

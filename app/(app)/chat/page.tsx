@@ -18,7 +18,7 @@ export default async function ChatListPage() {
       <Header title="Chats" />
       <AnimatedChatList>
         {rows.length === 0 ? (
-          <p className="text-sm text-stone-500 dark:text-stone-400">No conversations yet — start a check-in from Home.</p>
+          <p className="text-sm text-stone-500 dark:text-stone-400">No conversations yet - start a check-in from Home.</p>
         ) : (
           rows.map((c) => (
             <AnimatedChatItem key={c.id}>

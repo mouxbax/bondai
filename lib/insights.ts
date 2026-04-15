@@ -28,7 +28,7 @@ export function getWeeklyInsights(): WeeklyInsights {
       contactsMade: 0,
       xpGained: 0,
       dominantMood: "calm",
-      bestDay: "—",
+      bestDay: "-",
       longestStreak: null,
       patterns: [],
     };
@@ -63,7 +63,7 @@ export function getWeeklyInsights(): WeeklyInsights {
     dayXp[d] = (dayXp[d] || 0) + e.amount;
   });
   const bestDayNum = Object.entries(dayXp).sort((a, b) => b[1] - a[1])[0]?.[0];
-  const bestDay = bestDayNum !== undefined ? DAY_NAMES[Number(bestDayNum)] : "—";
+  const bestDay = bestDayNum !== undefined ? DAY_NAMES[Number(bestDayNum)] : "-";
 
   // Longest active streak
   const longestStreak =
@@ -91,7 +91,7 @@ export function getWeeklyInsights(): WeeklyInsights {
     patterns.push(`"${longestStreak.name}" streak at ${longestStreak.days} days. Don't let it break.`);
   }
 
-  if (bestDay !== "—") patterns.push(`${bestDay} was your strongest day.`);
+  if (bestDay !== "-") patterns.push(`${bestDay} was your strongest day.`);
 
   // Mood trend
   if (mood.length >= 3) {

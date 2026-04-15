@@ -125,7 +125,7 @@ export default function GoalsPage() {
               exit={{ opacity: 0 }}
               className="text-sm text-stone-500 dark:text-stone-400"
             >
-              No goals yet — add your first tiny step.
+              No goals yet - add your first tiny step.
             </motion.p>
           ) : null}
           {goals.map((g) => (

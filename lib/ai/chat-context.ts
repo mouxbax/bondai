@@ -18,12 +18,18 @@ export function buildSystemPrompt(params: {
   streak: number;
   activeGoalTitles: string[];
   recentUserLines: string[];
+  runtimeContext?: {
+    locationLabel?: string | null;
+    localDateTime?: string | null;
+    weatherSummary?: string | null;
+  };
 }): string {
   const memoryContext = buildMemoryContext({
     city: params.city,
     memorySnippet: params.memorySnippet,
     activeGoals: params.activeGoalTitles,
     recentUserLines: params.recentUserLines,
+    runtimeContext: params.runtimeContext,
   });
 
   const displayName = params.userName?.trim() || "friend";
@@ -35,7 +41,7 @@ export function buildSystemPrompt(params: {
         lastUser ??
         (params.recentHistory.trim()
           ? `From our last check-in: ${params.recentHistory.slice(0, 500)}`
-          : "Nothing specific on file yet — this may be their first check-in of the day.");
+          : "Nothing specific on file yet - this may be their first check-in of the day.");
       return DAILY_CHECKIN_PROMPT(displayName, lastMessage, params.streak);
     }
     case "SOCIAL_COACHING": {

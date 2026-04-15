@@ -49,7 +49,7 @@ export default function CoachingPage() {
           transition={{ duration: 0.4 }}
           className="text-sm text-stone-600 dark:text-stone-300"
         >
-          Pick a scenario. AIAH plays the other person — you practice the messy, human parts with coaching notes along the way.
+          Pick a scenario. AIAH plays the other person - you practice the messy, human parts with coaching notes along the way.
         </motion.p>
         <motion.div
           initial="hidden"

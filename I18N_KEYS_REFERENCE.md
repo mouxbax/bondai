@@ -16,7 +16,7 @@ nav.score         → "Score"
 
 ```
 landing.tagline                    → "A bridge back to real connection"
-landing.title                      → "BondAI — An AI Companion for Deeper Relationships"
+landing.title                      → "BondAI - An AI Companion for Deeper Relationships"
 landing.subtitle                   → "Remember your life. Coach your social skills. Connect with intention."
 landing.description                → "BondAI is an AI companion that remembers your life..."
 landing.cta.primary                → "Start for free" / "Commencer gratuitement"

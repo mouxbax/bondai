@@ -59,11 +59,11 @@ export const CRISIS_RESOURCES: CrisisResource[] = [
     href: "https://findahelpline.com",
   },
   {
-    label: "United States — 988",
-    detail: "Suicide & Crisis Lifeline — call or text 988.",
+    label: "United States - 988",
+    detail: "Suicide & Crisis Lifeline - call or text 988.",
   },
   {
-    label: "United Kingdom — Samaritans",
+    label: "United Kingdom - Samaritans",
     detail: "Call 116 123 (free, 24/7).",
   },
   {

@@ -26,7 +26,7 @@ export async function POST(req: Request) {
       if (existingAccount) {
         return NextResponse.json({ error: "An account with this email already exists. Try signing in." }, { status: 409 });
       }
-      // User exists (e.g., from Google OAuth) — add password-based account
+      // User exists (e.g., from Google OAuth) - add password-based account
       await prisma.account.create({
         data: {
           userId: existing.id,

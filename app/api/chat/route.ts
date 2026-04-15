@@ -26,7 +26,23 @@ const bodySchema = z.object({
   content: z.string().optional().default(""),
   useVoice: z.boolean().optional(),
   bootstrap: z.boolean().optional(),
+  context: z
+    .object({
+      locationLabel: z.string().trim().max(120).optional(),
+      localDateTime: z.string().trim().max(120).optional(),
+      weatherSummary: z.string().trim().max(160).optional(),
+    })
+    .optional(),
 });
+
+const VOICE_STYLE_PROMPT = `
+VOICE MODE OVERRIDE:
+- Sound natural when read aloud.
+- Keep responses concise (2-4 short sentences unless asked for depth).
+- Avoid markdown, lists, and special formatting characters.
+- Use conversational punctuation so text-to-speech sounds human.
+- Ask at most one gentle follow-up question.
+`.trim();
 
 export async function POST(req: Request): Promise<Response> {
   const session = await auth();
@@ -40,7 +56,7 @@ export async function POST(req: Request): Promise<Response> {
     return NextResponse.json({ error: "Invalid body" }, { status: 400 });
   }
 
-  const { conversationId, content, useVoice, bootstrap } = parsed.data;
+  const { conversationId, content, useVoice, bootstrap, context } = parsed.data;
   const trimmed = content.trim();
 
   if (!bootstrap && !trimmed) {
@@ -115,6 +131,7 @@ export async function POST(req: Request): Promise<Response> {
     streak: streakCount,
     activeGoalTitles: userRow.socialGoals.map((g) => g.title),
     recentUserLines,
+    runtimeContext: context,
   });
 
   const prior = bootstrap ? [] : toOpenAIMessages(convo.messages);
@@ -122,7 +139,7 @@ export async function POST(req: Request): Promise<Response> {
     bootstrap ? prior : [...prior, { role: "user" as const, content: trimmed }];
 
   const openaiMessages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
-    { role: "system", content: system },
+    { role: "system", content: useVoice ? `${system}\n\n${VOICE_STYLE_PROMPT}` : system },
     ...historyForModel,
   ];
 
@@ -130,7 +147,7 @@ export async function POST(req: Request): Promise<Response> {
     openaiMessages.push({
       role: "user",
       content:
-        "[System: This is the start of today's check-in. Send your opening message now — warm, specific, one great question. No meta.]",
+        "[System: This is the start of today's check-in. Send your opening message now - warm, specific, one great question. No meta.]",
     });
   }
 
@@ -157,8 +174,8 @@ export async function POST(req: Request): Promise<Response> {
             model,
             messages: openaiMessages,
             stream: true,
-            temperature: 0.7,
-            max_tokens: 700,
+            temperature: useVoice ? 0.55 : 0.7,
+            max_tokens: useVoice ? 260 : 700,
           });
           for await (const chunk of completion) {
             const delta = chunk.choices[0]?.delta?.content;
@@ -170,9 +187,9 @@ export async function POST(req: Request): Promise<Response> {
         };
 
         try {
-          await runStream(PRIMARY_MODEL);
+          await runStream(useVoice ? FALLBACK_MODEL : PRIMARY_MODEL);
         } catch {
-          await runStream(FALLBACK_MODEL);
+          await runStream(useVoice ? PRIMARY_MODEL : FALLBACK_MODEL);
         }
 
         await prisma.message.create({
