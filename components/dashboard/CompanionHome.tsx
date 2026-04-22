@@ -78,7 +78,9 @@ export function CompanionHome({ firstName }: CompanionHomeProps) {
           transition={{ duration: 0.7, ease: "easeOut" }}
           className="flex flex-col items-center gap-4 pt-4"
         >
-          <AIAHOrb mood={mood} size={180} />
+          <div data-tutorial="orb">
+            <AIAHOrb mood={mood} size={180} />
+          </div>
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -94,13 +96,16 @@ export function CompanionHome({ firstName }: CompanionHomeProps) {
               {isDay ? "Your day, one small step at a time." : "Rest matters. So does showing up."}
             </p>
           </motion.div>
-          <MoodSelector />
+          <div data-tutorial="mood-selector">
+            <MoodSelector />
+          </div>
 
           {/* Primary quick actions - the three things you can always do */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.45, duration: 0.5 }}
+            data-tutorial="quick-actions"
             className="mt-2 grid w-full max-w-md grid-cols-3 gap-2"
           >
             <Link

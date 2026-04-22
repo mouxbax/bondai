@@ -5,6 +5,7 @@ import { AppNav } from "@/components/layout/AppNav";
 import { PageTransition } from "@/components/layout/PageTransition";
 import { RitualModal } from "@/components/companion/RitualModal";
 import { AmbientPlayer } from "@/components/companion/AmbientPlayer";
+import { TutorialGate } from "@/components/tutorial/TutorialGate";
 
 export default async function AppShellLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
@@ -34,6 +35,7 @@ export default async function AppShellLayout({ children }: { children: React.Rea
       </div>
       <AmbientPlayer />
       <RitualModal />
+      <TutorialGate hasSeenTutorial={user.hasSeenTutorial} />
     </div>
   );
 }

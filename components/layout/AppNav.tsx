@@ -100,6 +100,7 @@ export function AppNav() {
             <Link
               key={item.href}
               href={item.href}
+              data-tutorial={item.href === "/talk" ? "nav-talk" : item.href === "/home" ? "nav-home" : undefined}
               className={cn(
                 "flex flex-1 flex-col items-center gap-0.5 py-1 text-[10px] font-medium",
                 active ? "text-[#1D9E75]" : "text-stone-500 dark:text-stone-400"
