@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Mic, Volume2 } from "lucide-react";
 import { AIAHOrb, type OrbMood } from "@/components/companion/AIAHOrb";
@@ -100,6 +101,9 @@ export function VoiceConversation({
   const [lastReply, setLastReply] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [voiceName, setVoiceName] = useState<string>("");
+
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const streamRef = useRef<MediaStream | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
@@ -556,16 +560,23 @@ export function VoiceConversation({
   const orbSize = 240;
   const ringScale = 1 + level * 0.35;
 
-  return (
+  const overlay = (
     <AnimatePresence>
       {open && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.4 }}
-          className={`fixed inset-0 z-[150] flex flex-col items-center justify-between bg-gradient-to-b ${theme.bgFrom} ${theme.bgTo} backdrop-blur-xl`}
+          transition={{ duration: 0.32 }}
+          className="fixed inset-0 z-[200] flex flex-col items-center justify-between"
         >
+          {/* Solid opaque base (light/dark aware) so nothing bleeds through */}
+          <div className="pointer-events-none absolute inset-0 bg-[#FAFAF8] dark:bg-[#0b0f0e]" />
+          {/* Themed gradient wash on top of the solid base */}
+          <div
+            className={`pointer-events-none absolute inset-0 bg-gradient-to-b ${theme.bgFrom} ${theme.bgTo}`}
+          />
+
           {/* Ambient background */}
           <div className="pointer-events-none absolute inset-0 overflow-hidden">
             <motion.div
@@ -683,4 +694,10 @@ export function VoiceConversation({
       )}
     </AnimatePresence>
   );
+
+  // Render through a portal so we escape any ancestor stacking context
+  // (PageTransition's motion.div applies `filter`, which otherwise clips
+  // our `position: fixed` overlay to the main content area).
+  if (!mounted || typeof document === "undefined") return null;
+  return createPortal(overlay, document.body);
 }

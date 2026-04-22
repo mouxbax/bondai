@@ -17,6 +17,14 @@
     {
       "path": "/api/cron/daily-nudge",
       "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/dispatch-nudges",
+      "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/weekly-plan",
+      "schedule": "0 18 * * 0"
     }
   ]
 }

@@ -5,6 +5,9 @@ const withPwa = withPWA({
   disable: process.env.NODE_ENV === "development",
   register: true,
   skipWaiting: true,
+  // Our push notification handler lives in worker/index.js and gets
+  // bundled into the generated service worker automatically.
+  customWorkerDir: "worker",
 });
 
 /** @type {import('next').NextConfig} */

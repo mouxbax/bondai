@@ -6,6 +6,7 @@ import { detectCrisisFromText } from "@/lib/ai/crisis";
 import { detectEmotionFromText } from "@/lib/ai/emotions";
 import { FALLBACK_MODEL, PRIMARY_MODEL, getOpenRouterClient } from "@/lib/ai/client";
 import { buildSystemPrompt, toOpenAIMessages } from "@/lib/ai/chat-context";
+import { updateMemoryFromTurn } from "@/lib/ai/memory";
 import { prisma } from "@/lib/db/prisma";
 import { countUserMessagesInConversation, getConversationForUser } from "@/lib/db/queries/conversations";
 import { logCrisisEvent } from "@/lib/db/queries/crisis-log";
@@ -206,6 +207,16 @@ export async function POST(req: Request): Promise<Response> {
           where: { id: conversationId },
           data: { updatedAt: new Date() },
         });
+
+        // Fire-and-forget memory extraction. Never blocks the reply.
+        if (!bootstrap && trimmed && fullAssistant.length > 0) {
+          void updateMemoryFromTurn({
+            userId: session.user.id,
+            conversationId,
+            userMessage: trimmed,
+            assistantMessage: fullAssistant,
+          }).catch(() => {});
+        }
 
         if (bootstrap && convo.type === "DAILY_CHECKIN" && fullAssistant.length > 0) {
           const dayStart = startOfUtcDay();

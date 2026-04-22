@@ -72,6 +72,10 @@ model User {
   dislikes            String?
   bio                 String?
 
+  // Notification preferences — JSON for forward-compatibility
+  // Shape: { enabled: boolean, morning: boolean, midday: boolean, evening: boolean, quietStart: number (0-23), quietEnd: number (0-23) }
+  pushPrefs           Json?
+
   // Subscription fields
   stripeCustomerId    String?
   subscriptionStatus  String    @default("free") // free, trialing, active, canceled, past_due
@@ -79,16 +83,79 @@ model User {
   trialEnd            DateTime?
   currentPeriodEnd    DateTime?
 
-  accounts      Account[]
-  sessions      Session[]
-  conversations Conversation[]
-  socialGoals   SocialGoal[]
-  events        ConnectionEvent[]
-  streak        UserStreak?
-  crisisLogs    CrisisLog[]
+  accounts           Account[]
+  sessions           Session[]
+  conversations      Conversation[]
+  socialGoals        SocialGoal[]
+  events             ConnectionEvent[]
+  streak             UserStreak?
+  crisisLogs         CrisisLog[]
+  pushSubscriptions  PushSubscription[]
+  memories           UserMemory[]
+  lifeOsProfile      LifeOsProfile?
+  weeklyPlans        WeeklyPlan[]
 
   @@index([subscriptionStatus])
   @@index([stripeCustomerId])
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String   // client public key (base64url)
+  auth      String   // auth secret (base64url)
+  userAgent String?
+  createdAt DateTime @default(now())
+  lastUsed  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+/// Life OS — the user's annual operating system. One per user.
+/// Stored as flexible JSON so sections can evolve without migrations.
+model LifeOsProfile {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  data      Json     // see LifeOsData type in lib/life-os/types
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// A generated week plan. Regenerated every Sunday (or on demand) from LifeOsProfile.
+model WeeklyPlan {
+  id         String   @id @default(cuid())
+  userId     String
+  weekStart  DateTime // Monday 00:00 in user's local tz (stored UTC)
+  data       Json     // see WeeklyPlanData type
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, weekStart])
+  @@index([userId, weekStart])
+}
+
+/// Structured long-term memory extracted from user conversations.
+/// Layer 1 on User.memorySnippet (rolling summary) is kept; this adds retrievable facts.
+model UserMemory {
+  id         String   @id @default(cuid())
+  userId     String
+  category   String   // "preference" | "person" | "goal" | "struggle" | "routine" | "fact"
+  content    String   @db.Text
+  confidence Float    @default(0.7) // 0..1 — how sure the model was
+  source     String?  // conversationId the fact was pulled from
+  lastSeenAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, category])
+  @@index([userId, lastSeenAt])
 }
 
 model Account {

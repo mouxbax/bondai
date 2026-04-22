@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { NotificationSettings } from "@/components/account/NotificationSettings";
 
 type AccountData = {
   id: string;
@@ -411,6 +412,9 @@ export function AccountClient() {
           </div>
         </CardContent>
       </Card>
+
+      {/* --- Notifications --- */}
+      <NotificationSettings />
 
       {/* --- Save bar --- */}
       <div className="sticky bottom-16 z-10 flex items-center justify-between gap-3 rounded-2xl border border-stone-200 bg-white/90 px-4 py-3 shadow-lg backdrop-blur-xl dark:border-stone-800 dark:bg-stone-900/90 md:bottom-6">

@@ -238,12 +238,14 @@ export function RitualModal() {
                       ))
                     )}
                   </div>
-                  <button
+                  <motion.button
                     onClick={complete}
-                    className="mt-6 w-full rounded-xl bg-[#1D9E75] py-3 text-sm font-semibold text-white hover:bg-[#0f6b4f]"
+                    whileTap={{ scale: 0.97 }}
+                    transition={{ type: "spring", stiffness: 500, damping: 22 }}
+                    className="mt-6 w-full rounded-xl bg-[#1D9E75] py-3 text-sm font-semibold text-white shadow-[0_6px_20px_-6px_rgba(29,158,117,0.5)] hover:bg-[#0f6b4f]"
                   >
                     Let&apos;s go
-                  </button>
+                  </motion.button>
                 </motion.div>
               )}
 
@@ -260,17 +262,19 @@ export function RitualModal() {
                     autoFocus
                     className="mt-4 min-h-[100px] w-full resize-none rounded-xl border border-stone-200 bg-white p-3 text-sm outline-none focus:border-[#1D9E75] dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100"
                   />
-                  <button
+                  <motion.button
                     onClick={complete}
-                    className="mt-4 w-full rounded-xl bg-[#1D9E75] py-3 text-sm font-semibold text-white hover:bg-[#0f6b4f]"
+                    whileTap={{ scale: 0.97 }}
+                    transition={{ type: "spring", stiffness: 500, damping: 22 }}
+                    className="mt-4 w-full rounded-xl bg-[#1D9E75] py-3 text-sm font-semibold text-white shadow-[0_6px_20px_-6px_rgba(29,158,117,0.5)] hover:bg-[#0f6b4f]"
                   >
                     Close the day
-                  </button>
+                  </motion.button>
                 </motion.div>
               )}
             </div>
           </motion.div>
-        </>
+        </div>
       )}
     </AnimatePresence>
   );
