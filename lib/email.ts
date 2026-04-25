@@ -13,38 +13,39 @@ const FROM = process.env.EMAIL_FROM || "AIAH <onboarding@resend.dev>";
 export async function sendEmail({ to, subject, html, text }: SendArgs): Promise<{ ok: true } | { ok: false; error: string }> {
   const apiKey = process.env.RESEND_API_KEY;
 
+  console.log("[sendEmail] called — to:", to, "subject:", subject);
+  console.log("[sendEmail] RESEND_API_KEY present:", !!apiKey, "EMAIL_FROM:", FROM);
+
   if (!apiKey) {
-    // Dev fallback: log the email to the server console so you can still test.
-    console.log("\n\n========== EMAIL (no RESEND_API_KEY set) ==========");
-    console.log("To:", to);
-    console.log("Subject:", subject);
-    console.log("Text:", text || "(none)");
-    console.log("HTML:", html);
-    console.log("====================================================\n\n");
+    console.log("[sendEmail] NO API KEY — email not sent, logging only");
     return { ok: true };
   }
 
   try {
+    const payload = {
+      from: FROM,
+      to: [to],
+      subject,
+      html,
+      text: text ?? html.replace(/<[^>]+>/g, ""),
+    };
+    console.log("[sendEmail] sending via Resend...");
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        from: FROM,
-        to: [to],
-        subject,
-        html,
-        text: text ?? html.replace(/<[^>]+>/g, ""),
-      }),
+      body: JSON.stringify(payload),
     });
+    const body = await res.text().catch(() => "");
+    console.log("[sendEmail] Resend response:", res.status, body);
     if (!res.ok) {
-      const body = await res.text().catch(() => "");
       return { ok: false, error: `Resend error ${res.status}: ${body}` };
     }
     return { ok: true };
   } catch (err) {
+    console.error("[sendEmail] exception:", err);
     return { ok: false, error: err instanceof Error ? err.message : "Unknown email error" };
   }
 }
