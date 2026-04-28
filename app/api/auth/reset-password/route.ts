@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
 import { hashPassword } from "@/auth";
+import { sendEmail, passwordChangedEmail } from "@/lib/email";
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -76,6 +77,22 @@ export async function POST(req: Request) {
       where: { id: record.id },
       data: { usedAt: new Date() },
     });
+
+    // Security notification — fire-and-forget.
+    void (async () => {
+      try {
+        const u = await prisma.user.findUnique({
+          where: { id: record.userId },
+          select: { email: true, name: true },
+        });
+        if (u?.email) {
+          const tpl = passwordChangedEmail(u.name);
+          await sendEmail({ to: u.email, ...tpl });
+        }
+      } catch (e) {
+        console.error("[reset-password] notify email failed:", e);
+      }
+    })();
 
     return NextResponse.json({ ok: true, email: record.email });
   } catch (err) {

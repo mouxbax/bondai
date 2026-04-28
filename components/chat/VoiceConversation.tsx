@@ -61,28 +61,10 @@ function normalizeForSpeech(text: string): string {
     .trim();
 }
 
-function splitSpeechChunks(text: string): string[] {
-  const clean = normalizeForSpeech(text);
-  if (!clean) return [];
-  const parts = clean.split(/(?<=[.!?])\s+/).filter(Boolean);
-  const chunks: string[] = [];
-  let current = "";
-  for (const part of parts) {
-    if ((current + " " + part).trim().length > 180) {
-      if (current.trim()) chunks.push(current.trim());
-      current = part;
-    } else {
-      current = `${current} ${part}`.trim();
-    }
-  }
-  if (current.trim()) chunks.push(current.trim());
-  return chunks;
-}
-
 /**
  * Full-screen immersive voice chat.
  * Flow: listen (MediaRecorder) → silence detected → POST /api/transcribe → onSend →
- *       wait for assistant → speak via SpeechSynthesis → listen again.
+ *       wait for assistant → speak via OpenAI TTS → listen again.
  *
  * Works on iOS Safari (unlike the old Web Speech API version).
  */
@@ -100,12 +82,11 @@ export function VoiceConversation({
   const [level, setLevel] = useState(0); // 0..1 mic amplitude (for viz)
   const [lastReply, setLastReply] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [voiceName, setVoiceName] = useState<string>("");
-
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
   const streamRef = useRef<MediaStream | null>(null);
+  const ttsAudioRef = useRef<HTMLAudioElement | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -120,74 +101,64 @@ export function VoiceConversation({
   const lastMsgCountRef = useRef(0);
   const shouldLoopRef = useRef(true);
   const listeningRef = useRef(false);
-  const utterRef = useRef<SpeechSynthesisUtterance | null>(null);
 
-  // Pick the best voice available
-  useEffect(() => {
-    if (typeof window === "undefined" || !window.speechSynthesis) return;
-    const setBest = () => {
-      const voices = window.speechSynthesis.getVoices();
-      if (voices.length === 0) return;
-      const preferred =
-        voices.find((v) => /samantha|aria|jenny|natural|neural/i.test(v.name)) ||
-        voices.find((v) => v.lang.startsWith("en") && v.localService) ||
-        voices.find((v) => v.lang.startsWith("en")) ||
-        voices[0];
-      setVoiceName(preferred.name);
-    };
-    setBest();
-    window.speechSynthesis.onvoiceschanged = setBest;
-    return () => {
-      if (window.speechSynthesis) window.speechSynthesis.onvoiceschanged = null;
-    };
+  /** Stop any in-flight TTS audio */
+  const stopTTS = useCallback(() => {
+    if (ttsAudioRef.current) {
+      ttsAudioRef.current.pause();
+      const src = ttsAudioRef.current.src;
+      ttsAudioRef.current.src = "";
+      ttsAudioRef.current = null;
+      if (src) URL.revokeObjectURL(src);
+    }
   }, []);
 
   const speak = useCallback(
-    (text: string, onEnd?: () => void) => {
-      if (typeof window === "undefined" || !window.speechSynthesis) {
-        onEnd?.();
-        return;
-      }
-      window.speechSynthesis.cancel();
-      const voices = window.speechSynthesis.getVoices();
-      setPhase("speaking");
-      const preferredVoice =
-        voices.find((x) => x.name === voiceName) ||
-        voices.find((x) => /samantha|aria|jenny|natural|neural/i.test(x.name)) ||
-        voices.find((x) => x.lang.startsWith("en"));
-
-      const chunks = splitSpeechChunks(text);
-      if (!chunks.length) {
+    async (text: string, onEnd?: () => void) => {
+      stopTTS();
+      const clean = normalizeForSpeech(text);
+      if (!clean) {
         setPhase("idle");
         onEnd?.();
         return;
       }
-      let idx = 0;
-      const speakNext = () => {
-        if (idx >= chunks.length) {
+      setPhase("speaking");
+      try {
+        const res = await fetch("/api/tts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: clean.slice(0, 4096) }),
+        });
+        if (!res.ok) {
+          console.error("[TTS] API error", res.status);
           setPhase("idle");
           onEnd?.();
           return;
         }
-        const u = new SpeechSynthesisUtterance(chunks[idx]);
-        u.rate = 0.96;
-        u.pitch = 1.02;
-        u.volume = 1.0;
-        if (preferredVoice) u.voice = preferredVoice;
-        u.onend = () => {
-          idx += 1;
-          setTimeout(speakNext, 70);
-        };
-        u.onerror = () => {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        ttsAudioRef.current = audio;
+        audio.onended = () => {
+          URL.revokeObjectURL(url);
+          ttsAudioRef.current = null;
           setPhase("idle");
           onEnd?.();
         };
-        utterRef.current = u;
-        window.speechSynthesis.speak(u);
-      };
-      speakNext();
+        audio.onerror = () => {
+          URL.revokeObjectURL(url);
+          ttsAudioRef.current = null;
+          setPhase("idle");
+          onEnd?.();
+        };
+        await audio.play();
+      } catch (err) {
+        console.error("[TTS] playback error", err);
+        setPhase("idle");
+        onEnd?.();
+      }
     },
-    [voiceName],
+    [stopTTS],
   );
 
   // --- Recorder lifecycle ---------------------------------------------------
@@ -439,9 +410,7 @@ export function VoiceConversation({
         } catch {}
       }
       teardownAudio();
-      if (typeof window !== "undefined" && window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-      }
+      stopTTS();
       setPhase("idle");
       return;
     }
@@ -491,9 +460,7 @@ export function VoiceConversation({
         } catch {}
       }
       teardownAudio();
-      if (typeof window !== "undefined" && window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-      }
+      stopTTS();
       setPhase("idle");
       setError(chatError);
     }
@@ -516,9 +483,7 @@ export function VoiceConversation({
       } catch {}
     }
     teardownAudio();
-    if (typeof window !== "undefined" && window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-    }
+    stopTTS();
     onClose();
   };
 
@@ -527,9 +492,7 @@ export function VoiceConversation({
     if (phase === "listening") {
       stopListening("manual");
     } else if (phase === "speaking") {
-      if (typeof window !== "undefined" && window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-      }
+      stopTTS();
       setPhase("idle");
       setTimeout(() => void startListening(), 150);
     } else if (phase === "idle") {

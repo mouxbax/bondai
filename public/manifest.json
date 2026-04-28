@@ -1,11 +1,11 @@
 {
   "name": "AIAH",
   "short_name": "AIAH",
-  "description": "Your AI companion for real human connection - check-ins, coaching, and gentle nudges toward the people who matter.",
+  "description": "Your AI life system — schedule, budget, goals, training, and growth managed in one place.",
   "start_url": "/home",
   "display": "standalone",
-  "background_color": "#fafaf8",
-  "theme_color": "#1d9e75",
+  "background_color": "#0b1210",
+  "theme_color": "#2dd4a3",
   "icons": [
     {
       "src": "/icons/icon-192.png",

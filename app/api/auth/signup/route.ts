@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
 import { hashPassword } from "@/auth";
+import { sendEmail, welcomeEmail } from "@/lib/email";
 
 export async function POST(req: Request) {
   try {
@@ -57,6 +58,16 @@ export async function POST(req: Request) {
         access_token: hashPassword(password),
       },
     });
+
+    // Welcome email — fire-and-forget so signup never fails on email infra.
+    void (async () => {
+      try {
+        const tpl = welcomeEmail(user.name);
+        await sendEmail({ to: email, ...tpl });
+      } catch (e) {
+        console.error("[signup] welcome email failed:", e);
+      }
+    })();
 
     return NextResponse.json({ ok: true, message: "Account created. You can now sign in." });
   } catch (err) {

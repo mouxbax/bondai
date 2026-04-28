@@ -38,7 +38,7 @@ export default function GoalsPage() {
             Life OS
           </TabButton>
           <TabButton active={tab === "social"} onClick={() => setTab("social")}>
-            Social goals
+            My goals
           </TabButton>
         </div>
 

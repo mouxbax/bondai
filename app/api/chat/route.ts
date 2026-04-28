@@ -4,7 +4,7 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { detectCrisisFromText } from "@/lib/ai/crisis";
 import { detectEmotionFromText } from "@/lib/ai/emotions";
-import { FALLBACK_MODEL, PRIMARY_MODEL, getOpenRouterClient } from "@/lib/ai/client";
+import { FALLBACK_MODEL, PRIMARY_MODEL, getOpenAIClient } from "@/lib/ai/client";
 import { buildSystemPrompt, toOpenAIMessages } from "@/lib/ai/chat-context";
 import { updateMemoryFromTurn } from "@/lib/ai/memory";
 import { prisma } from "@/lib/db/prisma";
@@ -27,6 +27,7 @@ const bodySchema = z.object({
   content: z.string().optional().default(""),
   useVoice: z.boolean().optional(),
   bootstrap: z.boolean().optional(),
+  mood: z.string().trim().max(20).optional(),
   context: z
     .object({
       locationLabel: z.string().trim().max(120).optional(),
@@ -57,7 +58,7 @@ export async function POST(req: Request): Promise<Response> {
     return NextResponse.json({ error: "Invalid body" }, { status: 400 });
   }
 
-  const { conversationId, content, useVoice, bootstrap, context } = parsed.data;
+  const { conversationId, content, useVoice, bootstrap, mood, context } = parsed.data;
   const trimmed = content.trim();
 
   if (!bootstrap && !trimmed) {
@@ -133,6 +134,7 @@ export async function POST(req: Request): Promise<Response> {
     activeGoalTitles: userRow.socialGoals.map((g) => g.title),
     recentUserLines,
     runtimeContext: context,
+    mood: mood ?? undefined,
   });
 
   const prior = bootstrap ? [] : toOpenAIMessages(convo.messages);
@@ -164,9 +166,9 @@ export async function POST(req: Request): Promise<Response> {
       try {
         let client: OpenAI;
         try {
-          client = getOpenRouterClient();
+          client = getOpenAIClient();
         } catch {
-          send({ type: "error", message: "AI is not configured. Set OPENROUTER_API_KEY." });
+          send({ type: "error", message: "AI is not configured. Set OPENAI_API_KEY." });
           controller.close();
           return;
         }
@@ -189,7 +191,8 @@ export async function POST(req: Request): Promise<Response> {
 
         try {
           await runStream(useVoice ? FALLBACK_MODEL : PRIMARY_MODEL);
-        } catch {
+        } catch (streamErr) {
+          console.error("[CHAT] primary model failed, trying fallback:", streamErr);
           await runStream(useVoice ? PRIMARY_MODEL : FALLBACK_MODEL);
         }
 

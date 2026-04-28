@@ -30,16 +30,18 @@ export function getPlanFromPriceId(priceId: string): SubscriptionPlan {
 }
 
 /**
- * Get the plan name for display
+ * Get the plan name for display.
+ * Branded — these strings appear on the subscribe page, in account UI,
+ * and in any operational copy that surfaces the plan name.
  */
 export function getPlanDisplayName(plan: SubscriptionPlan): string {
   switch (plan) {
     case 'plus':
-      return 'Plus';
+      return 'AIAH Plus';
     case 'care_plus':
-      return 'Care+';
+      return 'AIAH Care+';
     default:
-      return 'Free';
+      return 'AIAH';
   }
 }
 

@@ -28,10 +28,10 @@ export function LevelBadge({ compact = false }: { compact?: boolean }) {
           {state.level}
         </div>
         <div className="flex flex-col">
-          <span className="text-[10px] font-medium uppercase tracking-wider text-stone-500 dark:text-stone-400">
+          <span className="text-[10px] font-medium uppercase tracking-wider text-stone-400">
             Level {state.level}
           </span>
-          <div className="h-1 w-16 overflow-hidden rounded-full bg-stone-200 dark:bg-stone-800">
+          <div className="h-1 w-16 overflow-hidden rounded-full bg-white/10">
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${state.progress * 100}%` }}
@@ -45,7 +45,7 @@ export function LevelBadge({ compact = false }: { compact?: boolean }) {
   }
 
   return (
-    <div className="rounded-2xl border border-stone-100 bg-gradient-to-br from-amber-50 via-white to-orange-50 p-4 shadow-sm dark:border-stone-800 dark:from-amber-950/30 dark:via-stone-900 dark:to-orange-950/30">
+    <div className="rounded-2xl border border-white/[0.06] bg-gradient-to-br from-white/[0.06] via-white/[0.03] to-white/[0.06] p-4 shadow-[0_4px_24px_-8px_rgba(0,0,0,0.3)] backdrop-blur-xl">
       <div className="flex items-center gap-3">
         <motion.div
           animate={{
@@ -62,12 +62,12 @@ export function LevelBadge({ compact = false }: { compact?: boolean }) {
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1">
             <Sparkles className="h-3 w-3 text-amber-500" />
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-400">
               Level {state.level}
             </span>
           </div>
-          <p className="text-sm font-semibold text-stone-900 dark:text-stone-50">{state.total} XP total</p>
-          <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-stone-200 dark:bg-stone-800">
+          <p className="text-sm font-semibold text-stone-100">{state.total} XP total</p>
+          <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-white/10">
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${state.progress * 100}%` }}
@@ -75,7 +75,7 @@ export function LevelBadge({ compact = false }: { compact?: boolean }) {
               className="h-full bg-gradient-to-r from-amber-400 to-orange-500"
             />
           </div>
-          <p className="mt-1 text-[10px] text-stone-500 dark:text-stone-400">
+          <p className="mt-1 text-[10px] text-stone-400">
             {state.nextLevelXp - state.currentLevelXp} XP to level {state.level + 1}
           </p>
         </div>

@@ -76,8 +76,8 @@ async function main() {
     data: {
       userId: user.id,
       type: ConversationType.SOCIAL_COACHING,
-      title: "Social coaching",
-      scenarioId: "neighbor",
+      title: "Practice session",
+      scenarioId: "salary-negotiation",
     },
   });
 

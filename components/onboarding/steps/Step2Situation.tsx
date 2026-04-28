@@ -3,12 +3,12 @@
 import { cn } from "@/lib/utils";
 
 const OPTIONS = [
-  "Moved to a new city",
-  "Feel disconnected lately",
-  "Social anxiety",
-  "Lost touch with friends",
-  "Just want to talk",
-  "Going through a change",
+  "I want to optimize my schedule",
+  "I need help managing my money",
+  "I want to build better habits",
+  "I'm chasing a big goal",
+  "I want a complete life system",
+  "Going through a life change",
 ];
 
 export function Step2Situation({

@@ -27,7 +27,7 @@ const STEPS: TutorialStep[] = [
     id: "welcome",
     title: "Welcome to AIAH",
     description:
-      "Your AI companion for mental wellness. Let me show you around — it'll take 30 seconds.",
+      "Your AI life system. Let me show you around — it'll take 30 seconds.",
     target: null,
     position: "center",
     icon: <Sparkles className="h-8 w-8 text-[#1D9E75]" />,
@@ -36,7 +36,7 @@ const STEPS: TutorialStep[] = [
     id: "orb",
     title: "Meet Your Companion",
     description:
-      "This is AIAH — your personal AI companion. It responds to your mood and is always here when you need to talk.",
+      "This is AIAH — your AI life coach. It responds to your mood and adapts to help you hit your goals.",
     target: "[data-tutorial='orb']",
     position: "bottom",
   },
@@ -68,15 +68,15 @@ const STEPS: TutorialStep[] = [
     id: "nav-home",
     title: "Your Dashboard",
     description:
-      "Home is your daily hub — check your streak, see quests, and track your connection score.",
+      "Home is your daily hub — check your streak, see quests, and track your life score.",
     target: "[data-tutorial='nav-home']",
     position: "top",
   },
   {
     id: "notifications",
-    title: "Stay Connected",
+    title: "Stay on Track",
     description:
-      "Enable notifications so AIAH can check in on you during the day with personalized nudges and reminders.",
+      "Enable notifications so AIAH can send you daily action plans, nudges, and progress updates.",
     target: null,
     position: "center",
     icon: <Bell className="h-8 w-8 text-[#1D9E75]" />,
@@ -207,50 +207,49 @@ export function AppWalkthrough({ onComplete }: AppWalkthroughProps) {
       )`
     : undefined;
 
-  // Tooltip position
-  const getTooltipStyle = (): React.CSSProperties => {
-    if (!targetRect || current.position === "center") {
-      return {
-        position: "fixed",
-        top: "50%",
-        left: "50%",
-        transform: "translate(-50%, -50%)",
-      };
-    }
-
+  // Tooltip wrapper position. We set position on a plain div WRAPPER so that
+  // framer-motion's animated transform on the inner motion.div doesn't fight
+  // a CSS centering transform (which would otherwise drop the card to the
+  // bottom-right of the screen).
+  const isCentered = !targetRect || current.position === "center";
+  const getWrapperStyle = (): React.CSSProperties => {
+    if (isCentered) return {}; // centered via flex container instead
     const pad = 16;
+    const cardWidth = 320;
+    const halfW = cardWidth / 2;
     switch (current.position) {
       case "bottom":
         return {
           position: "fixed",
-          top: targetRect.bottom + pad,
-          left: Math.max(16, targetRect.left + targetRect.width / 2 - 160),
+          top: targetRect!.bottom + pad,
+          left: Math.min(
+            window.innerWidth - cardWidth - 16,
+            Math.max(16, targetRect!.left + targetRect!.width / 2 - halfW),
+          ),
         };
       case "top":
         return {
           position: "fixed",
-          bottom: window.innerHeight - targetRect.top + pad,
-          left: Math.max(16, targetRect.left + targetRect.width / 2 - 160),
+          bottom: window.innerHeight - targetRect!.top + pad,
+          left: Math.min(
+            window.innerWidth - cardWidth - 16,
+            Math.max(16, targetRect!.left + targetRect!.width / 2 - halfW),
+          ),
         };
       case "left":
         return {
           position: "fixed",
-          top: targetRect.top,
-          right: window.innerWidth - targetRect.left + pad,
+          top: Math.max(16, targetRect!.top),
+          right: window.innerWidth - targetRect!.left + pad,
         };
       case "right":
         return {
           position: "fixed",
-          top: targetRect.top,
-          left: targetRect.right + pad,
+          top: Math.max(16, targetRect!.top),
+          left: targetRect!.right + pad,
         };
       default:
-        return {
-          position: "fixed",
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
-        };
+        return {};
     }
   };
 
@@ -281,17 +280,25 @@ export function AppWalkthrough({ onComplete }: AppWalkthroughProps) {
         />
       )}
 
-      {/* Tooltip card */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={current.id}
-          initial={{ opacity: 0, y: 10, scale: 0.95 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -10, scale: 0.95 }}
-          transition={{ duration: 0.25 }}
-          style={getTooltipStyle()}
-          className="z-[10000] w-[320px] max-w-[calc(100vw-32px)] rounded-2xl bg-white p-5 shadow-2xl dark:bg-stone-900"
-        >
+      {/* Tooltip card. Wrapper owns positioning so framer-motion's transform
+          (used for scale/y animation) doesn't fight with translate centering. */}
+      <div
+        className={
+          isCentered
+            ? "fixed inset-0 z-[10000] flex items-center justify-center p-4 pointer-events-none"
+            : "z-[10000]"
+        }
+        style={isCentered ? undefined : getWrapperStyle()}
+      >
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={current.id}
+            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+            transition={{ duration: 0.25 }}
+            className="pointer-events-auto w-[320px] max-w-[calc(100vw-32px)] rounded-2xl bg-white p-5 shadow-2xl dark:bg-stone-900"
+          >
           {/* Skip button */}
           {!isLast && (
             <button
@@ -375,8 +382,9 @@ export function AppWalkthrough({ onComplete }: AppWalkthroughProps) {
               {!isLast && <ChevronRight className="h-4 w-4" />}
             </button>
           </div>
-        </motion.div>
-      </AnimatePresence>
+          </motion.div>
+        </AnimatePresence>
+      </div>
     </div>
   );
 }

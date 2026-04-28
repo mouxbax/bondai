@@ -54,12 +54,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Create checkout session with 7-day free trial
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://bondai-amber.vercel.app';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://aiah.app';
 
     const checkoutSession = await stripe.checkout.sessions.create({
       customer: stripeCustomerId,
       mode: 'subscription',
       payment_method_types: ['card'],
+      // Force the user to enter a card even though they're starting a free
+      // trial — that's the whole point of the paywall: real intent + auto-charge.
+      payment_method_collection: 'always',
       line_items: [
         {
           price: priceId,
@@ -74,7 +77,6 @@ export async function POST(request: NextRequest) {
       },
       success_url: `${appUrl}/home?checkout=success`,
       cancel_url: `${appUrl}/subscribe?checkout=canceled`,
-      customer_email: session.user.email,
     });
 
     return NextResponse.json({
@@ -82,9 +84,11 @@ export async function POST(request: NextRequest) {
       sessionId: checkoutSession.id,
     });
   } catch (error) {
-    console.error('[STRIPE_CHECKOUT_ERROR]', error);
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error('[STRIPE_CHECKOUT_ERROR] message:', msg);
+    console.error('[STRIPE_CHECKOUT_ERROR] full:', JSON.stringify(error, Object.getOwnPropertyNames(error as object)));
     return NextResponse.json(
-      { error: 'Failed to create checkout session' },
+      { error: `Failed to create checkout session: ${msg}` },
       { status: 500 }
     );
   }

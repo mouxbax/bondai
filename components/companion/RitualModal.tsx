@@ -64,6 +64,14 @@ export function RitualModal() {
 
     // Don't auto-trigger immediately on first load - wait a moment
     const timer = setTimeout(() => {
+      // Suppress while the first-time walkthrough is on screen so we don't
+      // stack two onboarding modals.
+      if (
+        typeof document !== "undefined" &&
+        document.body.dataset.tutorialActive === "true"
+      ) {
+        return;
+      }
       if (hour >= 5 && hour < 12 && last.morning !== today) {
         setKind("morning");
         setStep(0);

@@ -5,6 +5,7 @@ import Google from "next-auth/providers/google";
 import Nodemailer from "next-auth/providers/nodemailer";
 import { prisma } from "@/lib/db/prisma";
 import crypto from "crypto";
+import { sendEmail, welcomeEmail } from "@/lib/email";
 
 // Simple password hashing (Node.js built-in, no bcrypt dependency needed)
 function hashPassword(password: string): string {
@@ -96,6 +97,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.onboardingComplete = (token.onboardingComplete as boolean) ?? false;
       }
       return session;
+    },
+  },
+  events: {
+    // Fires once per user when NextAuth creates their row (e.g. first-time
+    // OAuth sign-in via Google). Credentials signups go through /api/auth/signup
+    // which sends its own welcome — guarded below by checking provider type.
+    async createUser({ user }) {
+      try {
+        if (!user.email) return;
+        const tpl = welcomeEmail(user.name ?? null);
+        await sendEmail({ to: user.email, ...tpl });
+      } catch (e) {
+        console.error("[auth.createUser] welcome email failed:", e);
+      }
     },
   },
   trustHost: true,

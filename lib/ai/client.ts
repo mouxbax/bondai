@@ -1,21 +1,31 @@
 import OpenAI from "openai";
 
-const baseURL = process.env.OPENROUTER_BASE_URL ?? "https://openrouter.ai/api/v1";
-const apiKey = process.env.OPENROUTER_API_KEY ?? "";
+// ── OpenAI direct client (primary — GPT-4o) ──────────────────────────
+const openaiKey = process.env.OPENAI_API_KEY ?? "";
 
-/** Primary model with OpenRouter fallback naming. */
-export const PRIMARY_MODEL = "qwen/qwen3-235b-a22b";
-export const FALLBACK_MODEL = "qwen/qwq-32b";
+export const PRIMARY_MODEL = "gpt-4o";
+export const FALLBACK_MODEL = "gpt-4o-mini";
+
+export function getOpenAIClient(): OpenAI {
+  if (!openaiKey) {
+    throw new Error("OPENAI_API_KEY is not set");
+  }
+  return new OpenAI({ apiKey: openaiKey });
+}
+
+// ── OpenRouter client (kept for backward compat / utility calls) ─────
+const orBaseURL = process.env.OPENROUTER_BASE_URL ?? "https://openrouter.ai/api/v1";
+const orApiKey = process.env.OPENROUTER_API_KEY ?? "";
 
 export function getOpenRouterClient(): OpenAI {
-  if (!apiKey) {
+  if (!orApiKey) {
     throw new Error("OPENROUTER_API_KEY is not set");
   }
   return new OpenAI({
-    apiKey,
-    baseURL,
+    apiKey: orApiKey,
+    baseURL: orBaseURL,
     defaultHeaders: {
-      "HTTP-Referer": process.env.NEXTAUTH_URL ?? "https://bondai-amber.vercel.app",
+      "HTTP-Referer": process.env.NEXTAUTH_URL ?? "https://aiah.app",
       "X-Title": "AIAH",
     },
   });
@@ -26,7 +36,7 @@ export async function chatCompletionJson<T>(
   user: string,
   options?: { model?: string; maxTokens?: number }
 ): Promise<T> {
-  const client = getOpenRouterClient();
+  const client = getOpenAIClient();
   const model = options?.model ?? PRIMARY_MODEL;
   const maxTokens = options?.maxTokens ?? 256;
 

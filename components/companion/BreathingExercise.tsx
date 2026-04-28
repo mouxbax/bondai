@@ -352,6 +352,12 @@ export function BreathingExercise({ open, onClose }: BreathingExerciseProps) {
       }
     }
     awardXP("mood_log");
+    // Recharge orb energy after breathing session
+    fetch("/api/energy", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "breathing" }),
+    }).catch(() => {});
     checkAchievements();
   }, [cleanup, pickEndQuote, soundOn, stopPad]);
 

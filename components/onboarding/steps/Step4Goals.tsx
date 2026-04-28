@@ -6,10 +6,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
 const SUGGESTIONS = [
-  "Say hi to one new person this week",
-  "Text a friend I haven't spoken to in a month",
-  "Attend one local event",
-  "Ask a coworker to grab coffee",
+  "Save 500 this month",
+  "Work out 4 times this week",
+  "Launch my side project",
+  "Build a solid morning routine",
 ];
 
 export function Step4Goals({
@@ -25,7 +25,7 @@ export function Step4Goals({
 }) {
   return (
     <div className="space-y-4">
-      <p className="text-lg text-stone-700 dark:text-stone-200">What&apos;s one social goal you&apos;d like to work toward?</p>
+      <p className="text-lg text-stone-700 dark:text-stone-200">What&apos;s one goal you want to crush first?</p>
       <div className="grid gap-2">
         {SUGGESTIONS.map((s) => (
           <button
@@ -33,7 +33,7 @@ export function Step4Goals({
             type="button"
             onClick={() => {
               setTitle(s);
-              setDescription("I'll keep it small and kind to myself.");
+              setDescription("Starting small, building momentum.");
             }}
             className={cn(
               "rounded-2xl border border-stone-200 bg-white px-4 py-3 text-left text-sm hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-900 dark:hover:bg-stone-800",

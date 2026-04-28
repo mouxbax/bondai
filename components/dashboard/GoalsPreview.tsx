@@ -10,7 +10,7 @@ export function GoalsPreview({ goals }: { goals: SocialGoal[] }) {
   return (
     <Card className="border-stone-100 shadow-sm dark:border-stone-800">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-base">Social goals</CardTitle>
+        <CardTitle className="text-base">Active goals</CardTitle>
         <Link href="/goals" className="text-sm font-medium text-[#1D9E75] hover:underline">
           View all
         </Link>

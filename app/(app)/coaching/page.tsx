@@ -23,6 +23,22 @@ export default function CoachingPage() {
 
   const start = async (scenarioId: string) => {
     setBusyId(scenarioId);
+
+    // Consume 10% energy for practice
+    const energyRes = await fetch("/api/energy", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "practice" }),
+    });
+    if (!energyRes.ok) {
+      const data = await energyRes.json();
+      if (data.error?.includes("Not enough energy")) {
+        alert(`Not enough energy for practice. You need 10% but have ${data.current}%. Try breathing to recharge.`);
+        setBusyId(null);
+        return;
+      }
+    }
+
     const scenario = COACHING_SCENARIOS.find((s) => s.id === scenarioId);
     const res = await fetch("/api/conversations", {
       method: "POST",
@@ -30,7 +46,7 @@ export default function CoachingPage() {
       body: JSON.stringify({
         type: "SOCIAL_COACHING",
         scenarioId,
-        title: scenario?.title ?? "Social coaching",
+        title: scenario?.title ?? "Practice session",
       }),
     });
     setBusyId(null);
@@ -41,7 +57,7 @@ export default function CoachingPage() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <Header title="Social coaching" />
+      <Header title="Practice" />
       <main className="mx-auto w-full max-w-5xl flex-1 space-y-4 px-4 py-6 md:px-8">
         <motion.p
           initial={{ opacity: 0 }}
@@ -49,7 +65,7 @@ export default function CoachingPage() {
           transition={{ duration: 0.4 }}
           className="text-sm text-stone-600 dark:text-stone-300"
         >
-          Pick a scenario. AIAH plays the other person - you practice the messy, human parts with coaching notes along the way.
+          Pick a scenario. AIAH plays the other person while you rehearse. Coaching notes guide you along the way.
         </motion.p>
         <motion.div
           initial="hidden"

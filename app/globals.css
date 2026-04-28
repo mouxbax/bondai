@@ -3,14 +3,14 @@
 @tailwind utilities;
 
 :root {
-  --background: #fafaf8;
-  --foreground: #1c1917;
-  --primary: #1d9e75;
-  --accent: #f59e0b;
+  --background: #0b1210;
+  --foreground: #f5f5f4;
+  --primary: #2dd4a3;
+  --accent: #fbbf24;
 }
 
 .dark {
-  --background: #0f1412;
+  --background: #0b1210;
   --foreground: #f5f5f4;
   --primary: #2dd4a3;
   --accent: #fbbf24;
@@ -26,19 +26,13 @@ body {
     text-wrap: balance;
   }
 
-  /* Soft glass card - replaces clinical bordered boxes */
+  /* Soft glass card - dark premium glass morphism */
   .soft-card {
-    @apply rounded-3xl bg-white/70 shadow-[0_4px_24px_-8px_rgba(0,0,0,0.08)] backdrop-blur-xl;
-  }
-  .dark .soft-card {
-    @apply bg-stone-900/60 shadow-[0_4px_24px_-8px_rgba(0,0,0,0.5)];
+    @apply rounded-3xl border border-white/[0.06] bg-white/[0.05] shadow-[0_4px_24px_-8px_rgba(0,0,0,0.4)] backdrop-blur-xl;
   }
 
   .soft-card-lg {
-    @apply rounded-[2rem] bg-white/60 shadow-[0_12px_48px_-12px_rgba(0,0,0,0.12)] backdrop-blur-2xl;
-  }
-  .dark .soft-card-lg {
-    @apply bg-stone-900/50 shadow-[0_12px_48px_-12px_rgba(0,0,0,0.6)];
+    @apply rounded-[2rem] border border-white/[0.06] bg-white/[0.04] shadow-[0_12px_48px_-12px_rgba(0,0,0,0.5)] backdrop-blur-2xl;
   }
 
   /* Smooth cubic-bezier for buttery transitions */

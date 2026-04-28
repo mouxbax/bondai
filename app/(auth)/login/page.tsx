@@ -110,7 +110,7 @@ export default function LoginPage() {
                 <CardDescription>
                   {mode === "login"
                     ? "Sign in to continue your check-ins and goals."
-                    : "Start your journey toward real connection."}
+                    : "Start building your life system."}
                 </CardDescription>
               </motion.div>
             </AnimatePresence>

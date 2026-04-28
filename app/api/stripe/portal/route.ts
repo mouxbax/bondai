@@ -27,12 +27,12 @@ export async function POST(_request: NextRequest) {
       );
     }
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://bondai-amber.vercel.app';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://aiah.app';
 
     // Create customer portal session
     const portalSession = await stripe.billingPortal.sessions.create({
       customer: user.stripeCustomerId,
-      return_url: `${appUrl}/home`,
+      return_url: `${appUrl}/account`,
     });
 
     return NextResponse.json({

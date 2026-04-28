@@ -70,7 +70,7 @@ export async function POST(req: Request): Promise<Response> {
     (type === "DAILY_CHECKIN"
       ? `Check-in · ${now.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
       : type === "SOCIAL_COACHING"
-        ? "Social coaching"
+        ? "Practice session"
         : type === "CRISIS"
           ? "Support chat"
           : "Conversation");

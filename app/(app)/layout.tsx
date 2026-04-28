@@ -1,11 +1,22 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db/prisma";
+import { isSubscriptionActive, type SubscriptionStatus } from "@/lib/stripe";
 import { AppNav } from "@/components/layout/AppNav";
 import { PageTransition } from "@/components/layout/PageTransition";
 import { RitualModal } from "@/components/companion/RitualModal";
 import { AmbientPlayer } from "@/components/companion/AmbientPlayer";
 import { TutorialGate } from "@/components/tutorial/TutorialGate";
+
+export const metadata: Metadata = {
+  robots: "noindex, nofollow",
+};
+
+// Routes inside (app) that remain accessible even WITHOUT an active
+// subscription — so the user can pick a plan, manage billing, or sign out.
+const SUB_GATE_EXEMPT_PREFIXES = ["/subscribe", "/account"];
 
 export default async function AppShellLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
@@ -27,8 +38,32 @@ export default async function AppShellLayout({ children }: { children: React.Rea
     redirect("/onboarding");
   }
 
+  // Subscription gate. Anything outside the exempt prefixes requires a
+  // trialing or active subscription. Free / canceled / past_due users are
+  // sent to /subscribe to either start a trial or fix billing.
+  const hdrs = headers();
+  const pathname = hdrs.get("x-pathname") || "";
+  const isExempt = SUB_GATE_EXEMPT_PREFIXES.some((p) => pathname.startsWith(p));
+  if (
+    !isExempt &&
+    !isSubscriptionActive(user.subscriptionStatus as SubscriptionStatus)
+  ) {
+    redirect("/subscribe");
+  }
+
+  const hasActiveSub = isSubscriptionActive(user.subscriptionStatus as SubscriptionStatus);
+
+  // If user hasn't subscribed yet, show a minimal layout (no nav, no tutorial)
+  if (!hasActiveSub) {
+    return (
+      <div className="min-h-[100dvh] bg-[#0b1210]">
+        {children}
+      </div>
+    );
+  }
+
   return (
-    <div className="flex min-h-[100dvh] bg-[#FAFAF8] dark:bg-[#0f1412]">
+    <div className="flex min-h-[100dvh] bg-[#0b1210]">
       <AppNav />
       <div className="flex min-h-[100dvh] min-w-0 flex-1 flex-col pb-16 md:pb-0">
         <PageTransition>{children}</PageTransition>

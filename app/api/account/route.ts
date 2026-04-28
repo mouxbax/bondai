@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db/prisma";
+import { sendEmail, accountDeletedEmail } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
 
@@ -112,6 +113,12 @@ export async function DELETE() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // Capture identity BEFORE delete so we can send the goodbye email.
+  const departing = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { email: true, name: true },
+  });
+
   try {
     await prisma.user.delete({ where: { id: session.user.id } });
   } catch (e) {
@@ -123,6 +130,18 @@ export async function DELETE() {
         { status: 500 },
       );
     }
+  }
+
+  // Goodbye email — fire-and-forget. Never blocks the API response.
+  if (departing?.email) {
+    void (async () => {
+      try {
+        const tpl = accountDeletedEmail(departing.name);
+        await sendEmail({ to: departing.email!, ...tpl });
+      } catch (e) {
+        console.error("[account.DELETE] goodbye email failed:", e);
+      }
+    })();
   }
 
   return NextResponse.json({ ok: true });

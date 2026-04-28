@@ -15,7 +15,7 @@ const BADGE_LABELS: Record<string, string> = {
   BRAVE: "Brave",
   OUT_THERE: "Out There",
   GOAL_GETTER: "Goal Getter",
-  SOCIAL_BUTTERFLY: "Social Butterfly",
+  SOCIAL_BUTTERFLY: "Networker",
 };
 
 const stagger = {
@@ -33,7 +33,7 @@ export default function ScorePage() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <Header title="Connection score" />
+      <Header title="Life Score" />
       <motion.main
         initial="hidden"
         animate="visible"
@@ -58,7 +58,7 @@ export default function ScorePage() {
                 <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-50">Badges</h2>
                 <div className="flex flex-wrap gap-2">
                   {data.badges.length === 0 ? (
-                    <p className="text-sm text-stone-500">Keep going - badges unlock as you connect.</p>
+                    <p className="text-sm text-stone-500">Keep going - badges unlock as you progress.</p>
                   ) : (
                     data.badges.map((b, i) => (
                       <motion.div

@@ -50,8 +50,10 @@ export function OnboardingFlow() {
     });
     setBusy(false);
     if (!res.ok) return;
-    const data = (await res.json()) as { conversationId: string };
-    router.push(`/chat/${data.conversationId}`);
+    // Land on /home so the walkthrough can spotlight orb / mood / quick-actions.
+    // The first conversation is still created server-side and accessible via Talk.
+    await res.json().catch(() => ({}));
+    router.push("/home");
   };
 
   return (

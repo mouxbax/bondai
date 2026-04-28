@@ -180,6 +180,11 @@ export function useChat(conversationId: string | null) {
       let res: Response;
       try {
         const context = getFastRuntimeContext();
+        // Read client-side mood so the AI can match the user's energy
+        const currentMood =
+          typeof window !== "undefined"
+            ? (localStorage.getItem("aiah-mood") ?? undefined)
+            : undefined;
         res = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -189,6 +194,7 @@ export function useChat(conversationId: string | null) {
             useVoice: opts?.useVoice,
             bootstrap: opts?.bootstrap,
             context,
+            mood: currentMood,
           }),
           signal: ac.signal,
         });

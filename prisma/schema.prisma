@@ -77,6 +77,11 @@ model User {
   // Shape: { enabled: boolean, morning: boolean, midday: boolean, evening: boolean, quietStart: number (0-23), quietEnd: number (0-23) }
   pushPrefs           Json?
 
+  // Energy system (orb)
+  energy              Int       @default(100)     // 0-100
+  lastEnergyUpdate    DateTime  @default(now())   // last time energy was calculated
+  lastPlanGeneratedAt DateTime?                   // for 7-day rolling cooldown
+
   // Subscription fields
   stripeCustomerId    String?
   subscriptionStatus  String    @default("free") // free, trialing, active, canceled, past_due

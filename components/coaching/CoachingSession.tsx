@@ -26,7 +26,7 @@ export function CoachingSession({ scenario }: { scenario: CoachingScenarioMeta }
       </CardHeader>
       <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-stone-600 dark:text-stone-300">
-          Use the chat to roleplay. When you wrap up, mark the session complete for a small connection boost.
+          Use the chat to rehearse. When you wrap up, mark the session complete to log your progress.
         </p>
         <div className="flex gap-2">
           <Button type="button" variant="secondary" className="rounded-xl" onClick={() => router.push("/coaching")}>

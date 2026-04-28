@@ -39,7 +39,7 @@ export function ConnectionScoreRing({ score, size = 120 }: { score: number; size
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="text-2xl font-bold text-stone-900 dark:text-stone-50">{clamped}</span>
-        <span className="text-[10px] uppercase tracking-wide text-stone-500">connection</span>
+        <span className="text-[10px] uppercase tracking-wide text-stone-500">life score</span>
       </div>
     </div>
   );

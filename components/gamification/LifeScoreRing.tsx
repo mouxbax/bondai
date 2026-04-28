@@ -37,7 +37,7 @@ export function LifeScoreRing({ size = 120 }: { size?: number }) {
           r={radius}
           fill="none"
           strokeWidth="8"
-          className="stroke-stone-200 dark:stroke-stone-800"
+          className="stroke-white/10"
         />
         <motion.circle
           cx={size / 2}
@@ -58,12 +58,12 @@ export function LifeScoreRing({ size = 120 }: { size?: number }) {
           key={score.total}
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="text-3xl font-bold"
-          style={{ color }}
+          className="font-bold leading-none"
+          style={{ color, fontSize: size * 0.28 }}
         >
           {score.total}
         </motion.span>
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-stone-400">
           Life Score
         </span>
       </div>

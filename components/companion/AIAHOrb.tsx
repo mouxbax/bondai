@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 
 export type OrbMood = "calm" | "happy" | "anxious" | "sad" | "focused" | "energetic" | "tender";
 
@@ -11,6 +11,8 @@ interface AIAHOrbProps {
   speaking?: boolean;
   listening?: boolean;
   thinking?: boolean;
+  energy?: number; // 0-100
+  showFace?: boolean;
   onClick?: () => void;
 }
 
@@ -28,18 +30,141 @@ const moodConfig: Record<OrbMood, {
   tender:    { colors: ["#EC4899", "#F9A8D4", "#FCE7F3"], speed: 0.8, intensity: 0.7 },
 };
 
+// ─── Kawaii face component ──────────────────────────────────────────────────
+function KawaiiFace({ energy = 100, speaking = false, mood }: { energy: number; speaking: boolean; mood: OrbMood }) {
+  const [blinking, setBlinking] = useState(false);
+
+  // Blink every 3-5 seconds
+  useEffect(() => {
+    const blink = () => {
+      setBlinking(true);
+      setTimeout(() => setBlinking(false), 150);
+    };
+    const schedule = () => {
+      const delay = 3000 + Math.random() * 2000;
+      return setTimeout(() => {
+        blink();
+        timerRef = schedule();
+      }, delay);
+    };
+    let timerRef = schedule();
+    return () => clearTimeout(timerRef);
+  }, []);
+
+  const sleeping = energy <= 0;
+  const tired = energy > 0 && energy <= 20;
+
+  // Sleeping face: closed eyes (lines) + tiny "z"
+  if (sleeping) {
+    return (
+      <g opacity="0.7">
+        {/* Closed left eye */}
+        <motion.line x1="78" y1="92" x2="88" y2="92" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+        {/* Closed right eye */}
+        <motion.line x1="112" y1="92" x2="122" y2="92" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+        {/* Sleepy mouth — flat line */}
+        <line x1="93" y1="115" x2="107" y2="115" stroke="white" strokeWidth="2" strokeLinecap="round" opacity="0.6" />
+        {/* Zzz */}
+        <motion.text
+          x="130" y="78" fill="white" fontSize="12" fontWeight="bold" opacity="0.5"
+          animate={{ y: [78, 72, 78], opacity: [0.5, 0.8, 0.5] }}
+          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+        >
+          z
+        </motion.text>
+        <motion.text
+          x="140" y="65" fill="white" fontSize="9" fontWeight="bold" opacity="0.3"
+          animate={{ y: [65, 59, 65], opacity: [0.3, 0.6, 0.3] }}
+          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}
+        >
+          z
+        </motion.text>
+      </g>
+    );
+  }
+
+  return (
+    <g>
+      {/* Left eye */}
+      {blinking ? (
+        <line x1="78" y1="92" x2="88" y2="92" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+      ) : (
+        <circle cx="83" cy="92" r={tired ? 3 : 4} fill="white" />
+      )}
+      {/* Right eye */}
+      {blinking ? (
+        <line x1="112" y1="92" x2="122" y2="92" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+      ) : (
+        <circle cx="117" cy="92" r={tired ? 3 : 4} fill="white" />
+      )}
+
+      {/* Mouth */}
+      {speaking ? (
+        // Speaking: small open circle
+        <motion.ellipse
+          cx="100" cy="113" rx="5" ry="4" fill="white" opacity="0.8"
+          animate={{ ry: [3, 5, 3] }}
+          transition={{ duration: 0.4, repeat: Infinity }}
+        />
+      ) : mood === "happy" || mood === "energetic" ? (
+        // Happy: bigger smile
+        <path d="M90 110 Q100 122 110 110" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" />
+      ) : tired ? (
+        // Tired: wavy line
+        <path d="M92 114 Q96 117 100 114 Q104 111 108 114" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" opacity="0.6" />
+      ) : (
+        // Default: gentle curve smile
+        <path d="M93 112 Q100 119 107 112" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" />
+      )}
+    </g>
+  );
+}
+
+// ─── Energy ring component ─────────────────────────────────────────────────
+function EnergyRing({ energy, color }: { energy: number; color: string }) {
+  const radius = 88;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (energy / 100) * circumference;
+
+  return (
+    <g>
+      {/* Background ring */}
+      <circle
+        cx="100" cy="100" r={radius}
+        fill="none" stroke="white" strokeWidth="2" opacity="0.08"
+      />
+      {/* Energy fill */}
+      <motion.circle
+        cx="100" cy="100" r={radius}
+        fill="none"
+        stroke={color}
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeDasharray={circumference}
+        strokeDashoffset={offset}
+        transform="rotate(-90 100 100)"
+        opacity="0.6"
+        animate={{ strokeDashoffset: offset }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
+      />
+    </g>
+  );
+}
+
 export function AIAHOrb({
   mood = "calm",
   size = 200,
   speaking = false,
   listening = false,
   thinking = false,
+  energy = 100,
+  showFace = true,
   onClick,
 }: AIAHOrbProps) {
   const config = moodConfig[mood];
   const id = useMemo(() => `orb-${Math.random().toString(36).slice(2, 9)}`, []);
 
-  const breathDuration = 4 / config.speed;
+  const breathDuration = energy <= 0 ? 6 : 4 / config.speed; // Slower breathing when sleeping
   const active = speaking || listening || thinking;
 
   return (
@@ -90,7 +215,7 @@ export function AIAHOrb({
       <svg
         viewBox="0 0 200 200"
         className="relative z-10"
-        style={{ width: size, height: size }}
+        style={{ width: size, height: size, opacity: energy <= 0 ? 0.6 : 1, transition: "opacity 0.5s ease" }}
       >
         <defs>
           {/* Gradient fill */}
@@ -172,6 +297,16 @@ export function AIAHOrb({
               />
             ))}
           </>
+        )}
+
+        {/* Energy ring */}
+        {showFace && (
+          <EnergyRing energy={energy} color={config.colors[0]} />
+        )}
+
+        {/* Kawaii face */}
+        {showFace && (
+          <KawaiiFace energy={energy} speaking={speaking} mood={mood} />
         )}
 
         {/* Speaking waveform */}

@@ -1,0 +1,30 @@
+User-agent: *
+Allow: /
+Allow: /blog
+Allow: /blog/*
+
+Disallow: /api/
+Disallow: /home
+Disallow: /talk
+Disallow: /chat
+Disallow: /mood
+Disallow: /habits
+Disallow: /goals
+Disallow: /people
+Disallow: /account
+Disallow: /subscribe
+Disallow: /focus
+Disallow: /breathe
+Disallow: /coaching
+Disallow: /timeline
+Disallow: /companion
+Disallow: /insights
+Disallow: /achievements
+Disallow: /score
+Disallow: /offline
+Disallow: /onboarding
+Disallow: /login
+Disallow: /forgot-password
+Disallow: /reset-password
+
+Sitemap: https://aiah.app/sitemap.xml

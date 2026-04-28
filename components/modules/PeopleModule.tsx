@@ -81,8 +81,8 @@ export function PeopleModule() {
       <div className="mx-auto w-full max-w-2xl px-4 py-6 md:px-8">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className={`text-2xl font-semibold ${theme.text}`}>People who matter</h2>
-            <p className={`mt-1 text-sm ${theme.textMuted}`}>Stay in touch on purpose.</p>
+            <h2 className={`text-2xl font-semibold ${theme.text}`}>Your circle</h2>
+            <p className={`mt-1 text-sm ${theme.textMuted}`}>Nurture the relationships that fuel your growth.</p>
           </div>
           <Button onClick={() => setShowForm((v) => !v)} className="rounded-xl">
             <Plus className="mr-1 h-4 w-4" /> Add
@@ -160,7 +160,7 @@ export function PeopleModule() {
           {sorted.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-stone-300 p-8 text-center dark:border-stone-700">
               <p className={`text-sm ${theme.text}`}>No one added yet.</p>
-              <p className={`mt-1 text-xs ${theme.textMuted}`}>Add the 5 people who matter most.</p>
+              <p className={`mt-1 text-xs ${theme.textMuted}`}>Add the 5 people in your inner circle.</p>
             </div>
           ) : (
             <AnimatePresence initial={false}>

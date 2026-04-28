@@ -102,13 +102,13 @@ export async function generateNudges(userId: string): Promise<Nudge[]> {
     });
   }
 
-  // 6. Low connection score encouragement
+  // 6. Low life score encouragement
   if (user.connectionScore < 20) {
     nudges.push({
       id: "low-score",
       type: "social",
       title: "Every step counts",
-      message: "Your connection score grows with each check-in, goal, and real-world interaction. You're building something.",
+      message: "Your life score grows with each check-in, goal, and action you complete. You're building something.",
       action: { label: "View score", href: "/score" },
       priority: 4,
     });

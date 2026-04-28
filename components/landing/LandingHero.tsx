@@ -1,213 +1,368 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { HeartHandshake, Sparkles, Users } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FloatingBlob } from "@/components/ui/motion";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowRight } from "lucide-react";
+import { AIAHOrb, type OrbMood } from "@/components/companion/AIAHOrb";
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 24 },
-  visible: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.6, delay: i * 0.12, ease: "easeOut" as const },
-  }),
-};
-
-const cardHover = {
-  rest: { y: 0, boxShadow: "0 1px 3px rgba(0,0,0,0.06)" },
-  hover: { y: -4, boxShadow: "0 8px 30px rgba(29,158,117,0.12)", transition: { type: "spring" as const, stiffness: 300 } },
-};
-
-const features = [
-  { icon: Sparkles, title: "Daily check-ins that remember you", desc: "Warm questions, gentle accountability, and tiny outward steps." },
-  { icon: Users, title: "Social skills practice", desc: "Roleplay neighbors, coworkers, and boundaries with realistic pacing." },
-  { icon: HeartHandshake, title: "Connection score & goals", desc: "Track momentum without shame - celebrate real-world wins." },
+const ORB_QUOTES = [
+  "What if your goals had a system behind them?",
+  "Discipline is just a habit you haven't built yet.",
+  "Your schedule should work for you, not against you.",
+  "Small wins compound into something massive.",
+  "The best version of you is already scheduled.",
+  "Structure is freedom in disguise.",
+  "You don't need more time. You need a system.",
+  "Every hour you plan is two hours you save.",
+  "Your potential is not the problem. Your system is.",
+  "Consistency beats motivation every single time.",
+  "What gets tracked gets done.",
+  "The gap between your goals and your life is a plan.",
+  "Imagine waking up knowing exactly what to do.",
+  "Your future self will thank your present discipline.",
+  "Stop dreaming. Start scheduling.",
+  "One system to rule your meals, money, and mindset.",
 ];
 
-const tiers = [
-  { name: "Free", price: "$0", desc: "Daily check-ins, coaching scenarios, goals, crisis resources." },
-  { name: "Plus", price: "$9", desc: "Deeper memory, richer insights, priority model routing (coming soon)." },
-  { name: "Care+", price: "$19", desc: "For teams & communities - analytics and facilitator tools (coming soon)." },
-];
+function shuffleQuotes() {
+  const arr = [...ORB_QUOTES];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+const responses: Record<string, { text: string; mood: OrbMood }[]> = {
+  default: [
+    { text: "Your system is being built.", mood: "calm" },
+    { text: "I'll remember everything. You just show up.", mood: "focused" },
+    { text: "Goals without a system are just wishes. I'm the system.", mood: "energetic" },
+  ],
+};
+
+function pickResponse(name: string) {
+  const pool = responses.default;
+  const entry = pool[Math.floor(Math.random() * pool.length)];
+  return { text: `${name}, ${entry.text.charAt(0).toLowerCase()}${entry.text.slice(1)}`, mood: entry.mood };
+}
 
 export function LandingContent() {
+  const [phase, setPhase] = useState<"intro" | "input" | "reveal">("intro");
+  const [name, setName] = useState("");
+  const [orbMood, setOrbMood] = useState<OrbMood>("calm");
+  const [message, setMessage] = useState("");
+  const [email, setEmail] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [orbHovered, setOrbHovered] = useState(false);
+  const [orbQuote, setOrbQuote] = useState("");
+  const quotePoolRef = useRef<string[]>([]);
+  const quoteIndexRef = useRef(0);
+  const quoteIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const getNextQuote = useCallback(() => {
+    if (quotePoolRef.current.length === 0 || quoteIndexRef.current >= quotePoolRef.current.length) {
+      quotePoolRef.current = shuffleQuotes();
+      quoteIndexRef.current = 0;
+    }
+    const q = quotePoolRef.current[quoteIndexRef.current];
+    quoteIndexRef.current += 1;
+    return q;
+  }, []);
+
+  const handleOrbEnter = useCallback(() => {
+    setOrbHovered(true);
+    setOrbQuote(getNextQuote());
+    quoteIntervalRef.current = setInterval(() => {
+      setOrbQuote(getNextQuote());
+    }, 3500);
+  }, [getNextQuote]);
+
+  const handleOrbLeave = useCallback(() => {
+    setOrbHovered(false);
+    if (quoteIntervalRef.current) {
+      clearInterval(quoteIntervalRef.current);
+      quoteIntervalRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (quoteIntervalRef.current) clearInterval(quoteIntervalRef.current);
+    };
+  }, []);
+
+  // Auto-advance from intro to input after 2s
+  useEffect(() => {
+    const t = setTimeout(() => setPhase("input"), 2200);
+    return () => clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    if (phase === "input" && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [phase]);
+
+  const handleSubmitName = () => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    const resp = pickResponse(trimmed);
+    setOrbMood(resp.mood);
+    setMessage(resp.text);
+    setPhase("reveal");
+  };
+
+  const handleWaitlist = () => {
+    if (!email.trim()) return;
+    setSubmitted(true);
+  };
+
   return (
     <>
-      {/* Header */}
+      {/* Nav */}
       <motion.header
-        initial={{ opacity: 0, y: -12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="mx-auto flex max-w-5xl items-center justify-between px-4 py-6 md:px-8"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.5, duration: 0.6 }}
+        className="absolute left-0 right-0 top-0 z-20 mx-auto flex max-w-5xl items-center justify-between px-6 py-6"
       >
-        <span className="text-lg font-semibold text-[#1D9E75]">AIAH</span>
-        <div className="flex gap-2">
-          <Button asChild variant="ghost" className="rounded-xl">
-            <Link href="/login">Log in</Link>
-          </Button>
-          <Button asChild className="rounded-xl">
-            <Link href="/login">Get started</Link>
-          </Button>
-        </div>
+        <span className="text-lg font-semibold text-emerald-400">AIAH</span>
+        <nav className="flex items-center gap-4 text-sm">
+          <Link
+            href="/blog"
+            className="text-stone-400 transition-colors hover:text-stone-200"
+          >
+            Blog
+          </Link>
+        </nav>
       </motion.header>
 
-      <main className="mx-auto max-w-5xl space-y-16 px-4 pb-24 pt-6 md:px-8">
-        {/* Hero */}
-        <section className="relative space-y-6 text-center md:text-left">
-          <FloatingBlob className="-top-20 -left-20 h-72 w-72 bg-[#1D9E75]/20" />
-          <FloatingBlob className="top-10 right-0 h-56 w-56 bg-emerald-300/15" />
-
-          <motion.p
-            custom={0}
-            initial="hidden"
-            animate="visible"
-            variants={fadeUp}
-            className="inline-flex rounded-full bg-[#1D9E75]/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[#0f6b4f] dark:text-emerald-200"
-          >
-            AI as a bridge - not a replacement
-          </motion.p>
-
-          <motion.h1
-            custom={1}
-            initial="hidden"
-            animate="visible"
-            variants={fadeUp}
-            className="text-balance text-4xl font-semibold tracking-tight md:text-5xl"
-          >
-            You deserve to feel less alone.
-          </motion.h1>
-
-          <motion.p
-            custom={2}
-            initial="hidden"
-            animate="visible"
-            variants={fadeUp}
-            className="mx-auto max-w-2xl text-lg text-stone-600 dark:text-stone-300 md:mx-0"
-          >
-            AIAH checks in like a thoughtful friend, helps you practice real-world conversations, and nudges you toward
-            people - until you need us a little less.
-          </motion.p>
-
+      {/* Full-screen orb experience */}
+      <div className="relative flex min-h-[100dvh] flex-col items-center justify-center px-6">
+        {/* Ambient glow */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <motion.div
-            custom={3}
-            initial="hidden"
-            animate="visible"
-            variants={fadeUp}
-            className="flex flex-col gap-3 sm:flex-row sm:justify-center md:justify-start"
+            className="absolute left-1/2 top-1/2 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-20 blur-[120px]"
+            style={{ background: orbMood === "calm" ? "#2dd4a3" : orbMood === "energetic" ? "#fb923c" : orbMood === "focused" ? "#34d399" : "#2dd4a3" }}
+            animate={{ scale: [1, 1.15, 1] }}
+            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+          />
+        </div>
+
+        <div className="relative z-10 flex flex-col items-center gap-8">
+          <h1 className="sr-only">AIAH: AI Life System for Schedule, Budget, Goals, Training and Growth</h1>
+          {/* Orb + hover quotes */}
+          <div
+            className="relative flex flex-col items-center"
+            onMouseEnter={handleOrbEnter}
+            onMouseLeave={handleOrbLeave}
           >
-            <Button asChild size="lg" className="rounded-2xl px-8 relative overflow-hidden group">
-              <Link href="/login">
-                <span className="relative z-10">Start free</span>
-                <motion.span
-                  className="absolute inset-0 bg-white/20"
-                  initial={{ x: "-100%" }}
-                  whileHover={{ x: "100%" }}
+            <motion.div
+              initial={{ scale: 0.6, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 1.2, ease: "easeOut" }}
+              className="cursor-pointer"
+            >
+              <AIAHOrb mood={orbMood} size={200} />
+            </motion.div>
+
+            <AnimatePresence>
+              {orbHovered && phase !== "reveal" && (
+                <motion.p
+                  key={orbQuote}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
                   transition={{ duration: 0.5 }}
-                />
-              </Link>
-            </Button>
-            <Button asChild size="lg" variant="secondary" className="rounded-2xl px-8">
-              <Link href="#features">See how it works</Link>
-            </Button>
-          </motion.div>
-        </section>
+                  className="absolute -top-12 w-72 text-center text-xs font-medium text-emerald-400/80"
+                >
+                  {orbQuote}
+                </motion.p>
+              )}
+            </AnimatePresence>
+          </div>
 
-        {/* Features */}
-        <motion.section
-          id="features"
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-50px" }}
-          variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.15 } } }}
-          className="grid gap-4 md:grid-cols-3"
-        >
-          {features.map((f) => (
-            <motion.div key={f.title} variants={fadeUp} custom={0}>
-              <motion.div initial="rest" whileHover="hover" variants={cardHover}>
-                <Card className="border-stone-100 shadow-sm dark:border-stone-800 h-full transition-colors hover:border-[#1D9E75]/30">
-                  <CardHeader>
-                    <motion.div whileHover={{ rotate: [0, -10, 10, 0] }} transition={{ duration: 0.4 }}>
-                      <f.icon className="mb-2 h-8 w-8 text-[#1D9E75]" />
-                    </motion.div>
-                    <CardTitle className="text-base">{f.title}</CardTitle>
-                    <CardDescription>{f.desc}</CardDescription>
-                  </CardHeader>
-                </Card>
+          <AnimatePresence mode="wait">
+            {/* Phase 1: Intro */}
+            {phase === "intro" && (
+              <motion.div
+                key="intro"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="text-center"
+              >
+                <p className="text-lg text-stone-400">
+                  Something is waking up...
+                </p>
               </motion.div>
-            </motion.div>
-          ))}
-        </motion.section>
+            )}
 
-        {/* Research */}
-        <motion.section
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="rounded-3xl border border-stone-100 bg-white/80 p-6 shadow-sm dark:border-stone-800 dark:bg-stone-900/60 md:p-10"
-        >
-          <h2 className="text-xl font-semibold">Backed by research on loneliness</h2>
-          <p className="mt-2 text-sm text-stone-600 dark:text-stone-300">
-            Loneliness is a global health priority - the WHO highlights social connection as protective for mental and physical
-            health. AIAH is designed to reduce isolation by strengthening your confidence with people, not replacing them.
-          </p>
-        </motion.section>
+            {/* Phase 2: Name input */}
+            {phase === "input" && (
+              <motion.div
+                key="input"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.5 }}
+                className="flex flex-col items-center gap-4"
+              >
+                <p className="text-sm text-stone-400">
+                  Tell me your name.
+                </p>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleSubmitName();
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Your name"
+                    maxLength={30}
+                    className="w-48 rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-center text-sm text-stone-100 placeholder-stone-600 outline-none transition-all focus:border-emerald-500/30 focus:bg-white/[0.06]"
+                  />
+                  <motion.button
+                    type="submit"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400 transition-colors hover:bg-emerald-500/30"
+                  >
+                    <ArrowRight className="h-4 w-4" />
+                  </motion.button>
+                </form>
+              </motion.div>
+            )}
 
-        {/* Pricing */}
-        <motion.section
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-50px" }}
-          variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.12 } } }}
-          className="grid gap-4 md:grid-cols-3"
-        >
-          {tiers.map((tier, i) => (
-            <motion.div key={tier.name} variants={fadeUp} custom={i}>
-              <motion.div initial="rest" whileHover="hover" variants={cardHover}>
-                <Card className={`border-stone-100 dark:border-stone-800 h-full transition-colors ${
-                  tier.name === "Plus" ? "ring-2 ring-[#1D9E75]/40" : ""
-                }`}>
-                  <CardHeader>
-                    <CardTitle>{tier.name}</CardTitle>
-                    <CardDescription className="text-2xl font-semibold text-stone-900 dark:text-stone-50">
-                      {tier.price}
-                      <span className="text-sm font-normal text-stone-500">/mo</span>
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-stone-600 dark:text-stone-300">{tier.desc}</p>
-                    <Button
-                      asChild
-                      className={`mt-4 w-full rounded-xl ${
-                        tier.name === "Plus" ? "bg-[#1D9E75] hover:bg-[#178f6a]" : ""
-                      }`}
-                      variant={tier.name === "Plus" ? "default" : "secondary"}
+            {/* Phase 3: Reveal */}
+            {phase === "reveal" && (
+              <motion.div
+                key="reveal"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, ease: "easeOut" }}
+                className="flex flex-col items-center gap-6"
+              >
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.3, duration: 0.8 }}
+                  className="max-w-md text-center text-xl font-medium leading-relaxed text-stone-100"
+                >
+                  {message}
+                </motion.p>
+
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.8, duration: 0.6 }}
+                  className="max-w-sm text-center text-sm leading-relaxed text-stone-500"
+                >
+                  Your schedule. Your budget. Your goals. Your training. One AI
+                  that knows your full picture and turns ambition into a system
+                  you actually follow.
+                </motion.p>
+
+                {/* Waitlist */}
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 1.2, duration: 0.5 }}
+                  className="mt-2 w-full max-w-sm"
+                >
+                  {!submitted ? (
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        handleWaitlist();
+                      }}
+                      className="flex gap-2"
                     >
-                      <Link href="/login">{tier.name === "Free" ? "Get started" : "Start free trial"}</Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </motion.div>
-          ))}
-        </motion.section>
-      </main>
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="Your email"
+                        required
+                        className="flex-1 rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-sm text-stone-100 placeholder-stone-600 outline-none transition-all focus:border-emerald-500/30 focus:bg-white/[0.06]"
+                      />
+                      <motion.button
+                        type="submit"
+                        whileHover={{ scale: 1.03 }}
+                        whileTap={{ scale: 0.97 }}
+                        className="whitespace-nowrap rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_8px_24px_-8px_rgba(45,212,163,0.4)] transition-all hover:bg-emerald-400"
+                      >
+                        Get early access
+                      </motion.button>
+                    </form>
+                  ) : (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-center"
+                    >
+                      <p className="text-sm font-medium text-emerald-400">
+                        You&apos;re on the list.
+                      </p>
+                      <p className="mt-1 text-xs text-stone-500">
+                        We&apos;ll notify you when AIAH is ready.
+                      </p>
+                    </motion.div>
+                  )}
+                </motion.div>
 
-      {/* Footer */}
-      <motion.footer
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        viewport={{ once: true }}
-        className="border-t border-stone-100 py-8 text-center text-xs text-stone-500 dark:border-stone-800 dark:text-stone-400"
-      >
-        AIAH · Built with care · If you&apos;re in crisis, visit{" "}
-        <a className="text-[#1D9E75] underline" href="https://findahelpline.com">
-          findahelpline.com
-        </a>
-      </motion.footer>
+                {/* Feature hints */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 1.6, duration: 0.6 }}
+                  className="mt-4 flex flex-wrap justify-center gap-2"
+                >
+                  {["Smart schedule", "Meal plans", "Budget coaching", "Goal tracking", "Fitness plans", "Daily check-ins"].map(
+                    (tag) => (
+                      <span
+                        key={tag}
+                        className="rounded-full border border-white/[0.06] bg-white/[0.03] px-3 py-1 text-[11px] text-stone-500"
+                      >
+                        {tag}
+                      </span>
+                    ),
+                  )}
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Bottom links */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 2, duration: 0.6 }}
+          className="absolute bottom-8 flex flex-col items-center gap-3"
+        >
+          <div className="flex items-center gap-4 text-xs text-stone-600">
+            <Link href="/blog" className="transition-colors hover:text-stone-400">
+              Blog
+            </Link>
+            <span className="text-stone-800">·</span>
+            <a
+              href="mailto:contact@aiah.app"
+              className="transition-colors hover:text-stone-400"
+            >
+              Contact
+            </a>
+          </div>
+        </motion.div>
+      </div>
     </>
   );
 }

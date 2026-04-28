@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth, hashPassword, verifyPassword } from "@/auth";
 import { prisma } from "@/lib/db/prisma";
+import { sendEmail, passwordChangedEmail } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
 
@@ -59,6 +60,22 @@ export async function POST(req: Request) {
     where: { id: account.id },
     data: { access_token: newHash },
   });
+
+  // Security notification — fire-and-forget.
+  void (async () => {
+    try {
+      const u = await prisma.user.findUnique({
+        where: { id: session.user!.id! },
+        select: { email: true, name: true },
+      });
+      if (u?.email) {
+        const tpl = passwordChangedEmail(u.name);
+        await sendEmail({ to: u.email, ...tpl });
+      }
+    } catch (e) {
+      console.error("[account/password] notify email failed:", e);
+    }
+  })();
 
   return NextResponse.json({ ok: true });
 }

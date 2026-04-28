@@ -12,6 +12,7 @@ import { LevelBadge } from "@/components/gamification/LevelBadge";
 import { LifeScoreRing } from "@/components/gamification/LifeScoreRing";
 import { QuestsList } from "@/components/gamification/QuestsList";
 import { useEffect, useState } from "react";
+import { useEnergy } from "@/hooks/useEnergy";
 
 interface CompanionHomeProps {
   firstName?: string | null;
@@ -37,6 +38,7 @@ const moodLines: Record<string, string[]> = {
 
 export function CompanionHome({ firstName }: CompanionHomeProps) {
   const { mood, theme, isDay } = useMood();
+  const { energy } = useEnergy();
   const [hour, setHour] = useState(12);
   const [line, setLine] = useState("I'm here.");
 
@@ -79,8 +81,11 @@ export function CompanionHome({ firstName }: CompanionHomeProps) {
           className="flex flex-col items-center gap-4 pt-4"
         >
           <div data-tutorial="orb">
-            <AIAHOrb mood={mood} size={180} />
+            <AIAHOrb mood={mood} size={180} energy={energy} showFace />
           </div>
+          <p className={`text-[10px] tabular-nums ${theme.textMuted}`}>
+            {energy <= 0 ? "Sleeping... recharging" : `${energy}% energy`}
+          </p>
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -93,7 +98,7 @@ export function CompanionHome({ firstName }: CompanionHomeProps) {
             </p>
             <h1 className={`mt-1 text-2xl font-semibold ${theme.text}`}>{line}</h1>
             <p className={`mt-1 text-xs ${theme.textMuted}`}>
-              {isDay ? "Your day, one small step at a time." : "Rest matters. So does showing up."}
+              {isDay ? "Your day. Your system. Your potential." : "Recovery is part of the system."}
             </p>
           </motion.div>
           <div data-tutorial="mood-selector">
@@ -117,17 +122,17 @@ export function CompanionHome({ firstName }: CompanionHomeProps) {
             </Link>
             <Link
               href="/breathe"
-              className="group flex flex-col items-center gap-1.5 rounded-2xl bg-white/80 p-3 text-stone-700 shadow-[0_4px_20px_-8px_rgba(0,0,0,0.1)] backdrop-blur-xl transition-transform hover:scale-[1.03] dark:bg-stone-800/70 dark:text-stone-200"
+              className="group flex flex-col items-center gap-1.5 rounded-2xl border border-white/[0.06] bg-white/[0.05] p-3 text-stone-200 shadow-[0_4px_20px_-8px_rgba(0,0,0,0.3)] backdrop-blur-xl transition-all hover:scale-[1.03] hover:bg-white/[0.08]"
             >
-              <Wind className="h-5 w-5 text-teal-500" />
+              <Wind className="h-5 w-5 text-teal-400" />
               <span className="text-xs font-semibold">Breathe</span>
             </Link>
             <Link
-              href="/mood"
-              className="group flex flex-col items-center gap-1.5 rounded-2xl bg-white/80 p-3 text-stone-700 shadow-[0_4px_20px_-8px_rgba(0,0,0,0.1)] backdrop-blur-xl transition-transform hover:scale-[1.03] dark:bg-stone-800/70 dark:text-stone-200"
+              href="/focus"
+              className="group flex flex-col items-center gap-1.5 rounded-2xl border border-white/[0.06] bg-white/[0.05] p-3 text-stone-200 shadow-[0_4px_20px_-8px_rgba(0,0,0,0.3)] backdrop-blur-xl transition-all hover:scale-[1.03] hover:bg-white/[0.08]"
             >
-              <Sparkles className="h-5 w-5 text-violet-500" />
-              <span className="text-xs font-semibold">Check in</span>
+              <Sparkles className="h-5 w-5 text-violet-400" />
+              <span className="text-xs font-semibold">Plan</span>
             </Link>
           </motion.div>
         </motion.section>
@@ -139,7 +144,7 @@ export function CompanionHome({ firstName }: CompanionHomeProps) {
           transition={{ delay: 0.3, duration: 0.5 }}
           className="grid gap-3 sm:grid-cols-[auto_1fr]"
         >
-          <div className="flex items-center justify-center rounded-2xl bg-white/70 p-4 shadow-[0_4px_24px_-8px_rgba(0,0,0,0.08)] backdrop-blur-xl dark:bg-stone-900/60">
+          <div className="flex items-center justify-center rounded-2xl border border-white/[0.06] bg-white/[0.05] p-4 shadow-[0_4px_24px_-8px_rgba(0,0,0,0.3)] backdrop-blur-xl">
             <LifeScoreRing size={100} />
           </div>
           <LevelBadge />
@@ -169,7 +174,7 @@ export function CompanionHome({ firstName }: CompanionHomeProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.45, duration: 0.5 }}
         >
-          <h2 className={`mb-3 text-sm font-semibold ${theme.text}`}>Your life, in one place</h2>
+          <h2 className={`mb-3 text-sm font-semibold ${theme.text}`}>Your command center</h2>
           <LifeModules />
         </motion.div>
 
