@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 
-export type OrbMood = "calm" | "happy" | "anxious" | "sad" | "focused" | "energetic" | "tender";
+export type OrbMood = "calm" | "happy" | "anxious" | "sad" | "focused" | "energetic" | "tender" | "shy" | "dizzy";
 
 interface AIAHOrbProps {
   mood?: OrbMood;
@@ -14,6 +14,7 @@ interface AIAHOrbProps {
   energy?: number; // 0-100
   showFace?: boolean;
   onClick?: () => void;
+  onMoodChange?: (mood: OrbMood) => void;
 }
 
 const moodConfig: Record<OrbMood, {
@@ -28,6 +29,8 @@ const moodConfig: Record<OrbMood, {
   focused:   { colors: ["#0D7C6A", "#1D9E75", "#4FD1A5"], speed: 0.9, intensity: 0.9 },
   energetic: { colors: ["#EF4444", "#F97316", "#FBBF24"], speed: 1.6, intensity: 1.3 },
   tender:    { colors: ["#EC4899", "#F9A8D4", "#FCE7F3"], speed: 0.8, intensity: 0.7 },
+  shy:       { colors: ["#F472B6", "#FBCFE8", "#FDF2F8"], speed: 0.5, intensity: 0.6 },
+  dizzy:     { colors: ["#FBBF24", "#A78BFA", "#34D399"], speed: 2.2, intensity: 1.4 },
 };
 
 // ─── Kawaii face component with cursor-tracking eyes ────────────────────────
@@ -65,11 +68,13 @@ function KawaiiFace({
   const tired = energy > 0 && energy <= 20;
 
   // Eye config
-  const eyeRadius = tired ? 7 : 9; // bigger eyes
-  const pupilRadius = tired ? 3 : 4;
+  const eyeRadius = tired ? 7 : mood === "shy" ? 8 : 9;
+  const pupilRadius = tired ? 3 : mood === "shy" ? 3.5 : 4;
   const maxPupilTravel = eyeRadius - pupilRadius - 1;
-  const px = pupilOffset.x * maxPupilTravel;
-  const py = pupilOffset.y * maxPupilTravel;
+  // Shy: eyes always look down-left; dizzy: override later
+  const shyOverride = mood === "shy";
+  const px = shyOverride ? -maxPupilTravel * 0.3 : pupilOffset.x * maxPupilTravel;
+  const py = shyOverride ? maxPupilTravel * 0.8 : pupilOffset.y * maxPupilTravel;
 
   // Sleeping face: closed eyes (arcs) + tiny "z"
   if (sleeping) {
@@ -105,6 +110,14 @@ function KawaiiFace({
       {/* Left eye */}
       {blinking ? (
         <path d="M74 92 Q83 97 92 92" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+      ) : mood === "dizzy" ? (
+        <g>
+          <circle cx="83" cy="92" r={eyeRadius} fill="white" opacity="0.95" />
+          {/* Dizzy spiral */}
+          <motion.g animate={{ rotate: [0, 360] }} transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }} style={{ transformOrigin: "83px 92px" }}>
+            <path d="M83 88 Q86 90 83 92 Q80 94 83 96" fill="none" stroke="#0b1210" strokeWidth="1.5" strokeLinecap="round" />
+          </motion.g>
+        </g>
       ) : (
         <g>
           <circle cx="83" cy="92" r={eyeRadius} fill="white" opacity="0.95" />
@@ -116,6 +129,14 @@ function KawaiiFace({
       {/* Right eye */}
       {blinking ? (
         <path d="M108 92 Q117 97 126 92" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+      ) : mood === "dizzy" ? (
+        <g>
+          <circle cx="117" cy="92" r={eyeRadius} fill="white" opacity="0.95" />
+          {/* Dizzy spiral */}
+          <motion.g animate={{ rotate: [0, -360] }} transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }} style={{ transformOrigin: "117px 92px" }}>
+            <path d="M117 88 Q120 90 117 92 Q114 94 117 96" fill="none" stroke="#0b1210" strokeWidth="1.5" strokeLinecap="round" />
+          </motion.g>
+        </g>
       ) : (
         <g>
           <circle cx="117" cy="92" r={eyeRadius} fill="white" opacity="0.95" />
@@ -125,12 +146,35 @@ function KawaiiFace({
         </g>
       )}
 
+      {/* Blush cheeks when shy */}
+      {mood === "shy" && (
+        <>
+          <motion.circle cx="72" cy="103" r="6" fill="#F472B6" opacity="0.3"
+            animate={{ opacity: [0.2, 0.4, 0.2] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          />
+          <motion.circle cx="128" cy="103" r="6" fill="#F472B6" opacity="0.3"
+            animate={{ opacity: [0.2, 0.4, 0.2] }}
+            transition={{ duration: 2, repeat: Infinity, delay: 0.3 }}
+          />
+        </>
+      )}
+
       {/* Mouth */}
       {speaking ? (
         <motion.ellipse
           cx="100" cy="113" rx="5" ry="4" fill="white" opacity="0.8"
           animate={{ ry: [3, 5, 3] }}
           transition={{ duration: 0.4, repeat: Infinity }}
+        />
+      ) : mood === "shy" ? (
+        // Shy: tiny wavy nervous smile
+        <path d="M95 113 Q100 116 105 113" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
+      ) : mood === "dizzy" ? (
+        // Dizzy: wobbly open mouth
+        <motion.ellipse cx="100" cy="114" rx="4" ry="5" fill="white" opacity="0.6"
+          animate={{ cx: [99, 101, 99], ry: [4, 6, 4] }}
+          transition={{ duration: 0.8, repeat: Infinity }}
         />
       ) : mood === "happy" || mood === "energetic" ? (
         <path d="M90 110 Q100 122 110 110" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" />
@@ -183,11 +227,95 @@ export function AIAHOrb({
   energy = 100,
   showFace = true,
   onClick,
+  onMoodChange,
 }: AIAHOrbProps) {
-  const config = moodConfig[mood];
+  // effectiveConfig is derived below after touch state setup
   const id = useMemo(() => `orb-${Math.random().toString(36).slice(2, 9)}`, []);
   const containerRef = useRef<HTMLDivElement>(null);
   const [pupilOffset, setPupilOffset] = useState({ x: 0, y: 0 });
+
+  // ─── Touch interaction state ────────────────────────────────────────
+  const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+  const touchMoveCountRef = useRef(0);
+  const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastTapRef = useRef(0);
+  const [touchMood, setTouchMood] = useState<OrbMood | null>(null);
+  const touchMoodTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Apply touch mood temporarily, then revert
+  const applyTouchMood = useCallback((m: OrbMood, durationMs = 2500) => {
+    setTouchMood(m);
+    onMoodChange?.(m);
+    if (touchMoodTimerRef.current) clearTimeout(touchMoodTimerRef.current);
+    touchMoodTimerRef.current = setTimeout(() => {
+      setTouchMood(null);
+    }, durationMs);
+  }, [onMoodChange]);
+
+  // Shake detection via DeviceMotion
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    let lastShake = 0;
+    const onMotion = (e: DeviceMotionEvent) => {
+      const a = e.accelerationIncludingGravity;
+      if (!a) return;
+      const force = Math.sqrt((a.x ?? 0) ** 2 + (a.y ?? 0) ** 2 + (a.z ?? 0) ** 2);
+      if (force > 25 && Date.now() - lastShake > 3000) {
+        lastShake = Date.now();
+        applyTouchMood("dizzy", 3000);
+      }
+    };
+    window.addEventListener("devicemotion", onMotion);
+    return () => window.removeEventListener("devicemotion", onMotion);
+  }, [applyTouchMood]);
+
+  // Touch handlers
+  const onTouchStart = useCallback((e: React.TouchEvent) => {
+    const t = e.touches[0];
+    touchStartRef.current = { x: t.clientX, y: t.clientY, time: Date.now() };
+    touchMoveCountRef.current = 0;
+
+    // Double-tap detection (wake up)
+    const now = Date.now();
+    if (now - lastTapRef.current < 350) {
+      if (energy <= 0) {
+        applyTouchMood("happy", 2000);
+      }
+      lastTapRef.current = 0;
+    } else {
+      lastTapRef.current = now;
+    }
+
+    // Long hold = purr (happy + slow pulse)
+    holdTimerRef.current = setTimeout(() => {
+      applyTouchMood("tender", 3000);
+    }, 800);
+  }, [energy, applyTouchMood]);
+
+  const onTouchMove = useCallback(() => {
+    touchMoveCountRef.current += 1;
+    // If moving a lot, cancel hold
+    if (holdTimerRef.current && touchMoveCountRef.current > 3) {
+      clearTimeout(holdTimerRef.current);
+      holdTimerRef.current = null;
+    }
+  }, []);
+
+  const onTouchEnd = useCallback(() => {
+    if (holdTimerRef.current) {
+      clearTimeout(holdTimerRef.current);
+      holdTimerRef.current = null;
+    }
+    // Petting = multiple small moves on the orb
+    if (touchMoveCountRef.current >= 5 && touchMoveCountRef.current < 30) {
+      applyTouchMood("shy", 2500);
+    }
+    touchStartRef.current = null;
+  }, [applyTouchMood]);
+
+  // Effective mood (touch mood overrides prop mood)
+  const effectiveMood = touchMood ?? mood;
+  const effectiveConfig = moodConfig[effectiveMood];
 
   // Track cursor position relative to orb center
   const handleMouseMove = useCallback((e: MouseEvent) => {
@@ -198,7 +326,7 @@ export function AIAHOrb({
     const dx = e.clientX - cx;
     const dy = e.clientY - cy;
     const dist = Math.sqrt(dx * dx + dy * dy);
-    const maxDist = Math.max(rect.width, 400); // normalize over a reasonable range
+    const maxDist = Math.max(rect.width, 400);
     const norm = Math.min(dist / maxDist, 1);
     setPupilOffset({
       x: dist > 0 ? (dx / dist) * norm : 0,
@@ -212,7 +340,7 @@ export function AIAHOrb({
     return () => window.removeEventListener("mousemove", handleMouseMove);
   }, [showFace, handleMouseMove]);
 
-  const breathDuration = energy <= 0 ? 6 : 4 / config.speed; // Slower breathing when sleeping
+  const breathDuration = energy <= 0 ? 6 : 4 / effectiveConfig.speed;
   const active = speaking || listening || thinking;
 
   return (
@@ -221,6 +349,9 @@ export function AIAHOrb({
       className="relative inline-block cursor-pointer select-none"
       style={{ width: size, height: size }}
       onClick={onClick}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
       whileHover={{ scale: 1.03 }}
       whileTap={{ scale: 0.97 }}
     >
@@ -228,11 +359,11 @@ export function AIAHOrb({
       <motion.div
         className="absolute inset-0 rounded-full"
         style={{
-          background: `radial-gradient(circle, ${config.colors[0]}40 0%, transparent 70%)`,
+          background: `radial-gradient(circle, ${effectiveConfig.colors[0]}40 0%, transparent 70%)`,
           filter: "blur(20px)",
         }}
         animate={{
-          scale: [1, 1.15 * config.intensity, 1],
+          scale: [1, 1.15 * effectiveConfig.intensity, 1],
           opacity: [0.5, 0.9, 0.5],
         }}
         transition={{
@@ -247,13 +378,13 @@ export function AIAHOrb({
         <>
           <motion.div
             className="absolute inset-0 rounded-full border-2"
-            style={{ borderColor: config.colors[0] }}
+            style={{ borderColor: effectiveConfig.colors[0] }}
             animate={{ scale: [1, 1.5], opacity: [0.8, 0] }}
             transition={{ duration: 1.5, repeat: Infinity, ease: "easeOut" }}
           />
           <motion.div
             className="absolute inset-0 rounded-full border-2"
-            style={{ borderColor: config.colors[0] }}
+            style={{ borderColor: effectiveConfig.colors[0] }}
             animate={{ scale: [1, 1.5], opacity: [0.8, 0] }}
             transition={{ duration: 1.5, repeat: Infinity, ease: "easeOut", delay: 0.5 }}
           />
@@ -269,9 +400,9 @@ export function AIAHOrb({
         <defs>
           {/* Gradient fill */}
           <radialGradient id={`${id}-grad`} cx="35%" cy="35%" r="75%">
-            <stop offset="0%" stopColor={config.colors[2]} stopOpacity="1" />
-            <stop offset="50%" stopColor={config.colors[1]} stopOpacity="0.95" />
-            <stop offset="100%" stopColor={config.colors[0]} stopOpacity="1" />
+            <stop offset="0%" stopColor={effectiveConfig.colors[2]} stopOpacity="1" />
+            <stop offset="50%" stopColor={effectiveConfig.colors[1]} stopOpacity="0.95" />
+            <stop offset="100%" stopColor={effectiveConfig.colors[0]} stopOpacity="1" />
           </radialGradient>
 
           {/* Inner glow */}
@@ -332,7 +463,7 @@ export function AIAHOrb({
                 cx={100 + Math.cos((i / 5) * Math.PI * 2) * 60}
                 cy={100 + Math.sin((i / 5) * Math.PI * 2) * 60}
                 r="3"
-                fill={config.colors[2]}
+                fill={effectiveConfig.colors[2]}
                 animate={{
                   opacity: [0, 1, 0],
                   scale: [0.5, 1.2, 0.5],
@@ -350,12 +481,12 @@ export function AIAHOrb({
 
         {/* Energy ring */}
         {showFace && (
-          <EnergyRing energy={energy} color={config.colors[0]} />
+          <EnergyRing energy={energy} color={effectiveConfig.colors[0]} />
         )}
 
         {/* Kawaii face */}
         {showFace && (
-          <KawaiiFace energy={energy} speaking={speaking} mood={mood} pupilOffset={pupilOffset} />
+          <KawaiiFace energy={energy} speaking={speaking} mood={effectiveMood} pupilOffset={pupilOffset} />
         )}
 
         {/* Speaking waveform */}
@@ -377,7 +508,7 @@ export function AIAHOrb({
                   y1={y1}
                   x2={x2}
                   y2={y2}
-                  stroke={config.colors[0]}
+                  stroke={effectiveConfig.colors[0]}
                   strokeWidth="3"
                   strokeLinecap="round"
                   animate={{
@@ -400,7 +531,7 @@ export function AIAHOrb({
         className="absolute left-1/2 -bottom-4 h-2 rounded-full"
         style={{
           width: size * 0.6,
-          background: `radial-gradient(ellipse, ${config.colors[0]}30 0%, transparent 70%)`,
+          background: `radial-gradient(ellipse, ${effectiveConfig.colors[0]}30 0%, transparent 70%)`,
           transform: "translateX(-50%)",
           filter: "blur(8px)",
         }}

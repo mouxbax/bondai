@@ -57,7 +57,7 @@ export default async function LandingPage() {
   }
 
   return (
-    <div className="min-h-[100dvh] bg-[#0b1210] text-stone-50 overflow-hidden">
+    <div className="min-h-[100dvh] bg-background text-stone-900 dark:text-stone-50 overflow-hidden">
       <OrganizationSchema />
       <WebSiteSchema />
       <LandingContent />

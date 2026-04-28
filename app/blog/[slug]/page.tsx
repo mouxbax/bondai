@@ -155,7 +155,7 @@ export default async function BlogPostPage({ params }: Props) {
   });
 
   return (
-    <div className="min-h-[100dvh] bg-[#0b1210] text-stone-100">
+    <div className="min-h-[100dvh] bg-background text-stone-800 dark:text-stone-100">
       <ArticleJsonLd post={post} />
 
       {/* Nav */}

@@ -24,7 +24,13 @@ export default async function AppShellLayout({ children }: { children: React.Rea
     redirect("/login");
   }
 
-  const user = await prisma.user.findUnique({ where: { id: session.user.id } });
+  let user;
+  try {
+    user = await prisma.user.findUnique({ where: { id: session.user.id } });
+  } catch (err) {
+    console.error("[AppShellLayout] Prisma query failed:", err);
+    throw err;
+  }
 
   // Zombie session - the JWT points at a user row that no longer exists
   // (typical after a local db reset). Bounce to login so NextAuth can clear
@@ -56,14 +62,14 @@ export default async function AppShellLayout({ children }: { children: React.Rea
   // If user hasn't subscribed yet, show a minimal layout (no nav, no tutorial)
   if (!hasActiveSub) {
     return (
-      <div className="min-h-[100dvh] bg-[#0b1210]">
+      <div className="min-h-[100dvh] bg-background">
         {children}
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-[100dvh] bg-[#0b1210]">
+    <div className="flex min-h-[100dvh] bg-background">
       <AppNav />
       <div className="flex min-h-[100dvh] min-w-0 flex-1 flex-col pb-16 md:pb-0">
         <PageTransition>{children}</PageTransition>

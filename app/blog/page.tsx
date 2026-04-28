@@ -36,7 +36,7 @@ export const metadata: Metadata = {
 
 export default function BlogPage() {
   return (
-    <div className="min-h-[100dvh] bg-[#0b1210] text-stone-100">
+    <div className="min-h-[100dvh] bg-background text-stone-800 dark:text-stone-100">
       {/* Nav */}
       <header className="mx-auto flex max-w-4xl items-center justify-between px-6 py-6">
         <Link href="/" className="text-lg font-semibold text-emerald-400">

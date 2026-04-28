@@ -358,6 +358,12 @@ export function BreathingExercise({ open, onClose }: BreathingExerciseProps) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "breathing" }),
     }).catch(() => {});
+    // Award coins for breathing session
+    fetch("/api/coins", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "breathingSession" }),
+    }).catch(() => {});
     checkAchievements();
   }, [cleanup, pickEndQuote, soundOn, stopPad]);
 

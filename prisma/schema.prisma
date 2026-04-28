@@ -98,8 +98,12 @@ model User {
   crisisLogs         CrisisLog[]
   pushSubscriptions  PushSubscription[]
   memories           UserMemory[]
+  coins               Int       @default(0)       // virtual currency
+
   lifeOsProfile      LifeOsProfile?
   weeklyPlans        WeeklyPlan[]
+  inventory          PetInventory[]
+  equippedItems      PetEquipped[]
 
   @@index([subscriptionStatus])
   @@index([stripeCustomerId])
@@ -283,6 +287,63 @@ model UserStreak {
   lastCheckInDate   DateTime?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ─── Pet Shop System (Tamagotchi economy) ──────────────────────────────────
+enum ShopCategory {
+  FOOD
+  DRINK
+  ACCESSORY
+  BACKGROUND
+  PERSONALITY
+}
+
+/// Catalog of items available in the pet shop
+model ShopItem {
+  id          String       @id @default(cuid())
+  slug        String       @unique        // e.g. "hat-crown", "food-pizza"
+  name        String
+  description String
+  category    ShopCategory
+  price       Int                         // coin cost
+  icon        String?                     // emoji or icon name
+  rarity      String       @default("common") // common, rare, legendary
+  effect      Json?                       // { energy?: number, moodBoost?: OrbMood, duration?: number }
+  consumable  Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+
+  inventory   PetInventory[]
+  equipped    PetEquipped[]
+}
+
+/// Items a user owns (quantity tracked for consumables)
+model PetInventory {
+  id        String   @id @default(cuid())
+  userId    String
+  itemId    String
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+
+  user User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  item ShopItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, itemId])
+  @@index([userId])
+}
+
+/// Currently equipped accessories / active effects
+model PetEquipped {
+  id        String   @id @default(cuid())
+  userId    String
+  itemId    String
+  slot      String   // "hat", "glasses", "background", "personality"
+  equippedAt DateTime @default(now())
+
+  user User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  item ShopItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, slot]) // one item per slot
+  @@index([userId])
 }
 
 model CrisisLog {

@@ -32,8 +32,8 @@ export function MoodSelector() {
             whileTap={{ scale: 0.95 }}
             className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
               active
-                ? "border-white/20 bg-white/15 text-white shadow-[0_0_12px_rgba(255,255,255,0.08)]"
-                : "border-white/[0.06] bg-white/[0.04] text-stone-400 backdrop-blur hover:bg-white/[0.08] hover:text-stone-200"
+                ? "border-stone-300 bg-white/90 text-stone-900 shadow-sm dark:border-white/20 dark:bg-white/15 dark:text-white dark:shadow-[0_0_12px_rgba(255,255,255,0.08)]"
+                : "border-stone-200 bg-white/60 text-stone-500 backdrop-blur hover:bg-white/80 hover:text-stone-700 dark:border-white/[0.06] dark:bg-white/[0.04] dark:text-stone-400 dark:hover:bg-white/[0.08] dark:hover:text-stone-200"
             }`}
             aria-pressed={active}
           >

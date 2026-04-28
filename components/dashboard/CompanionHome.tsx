@@ -122,16 +122,16 @@ export function CompanionHome({ firstName }: CompanionHomeProps) {
             </Link>
             <Link
               href="/breathe"
-              className="group flex flex-col items-center gap-1.5 rounded-2xl border border-white/[0.06] bg-white/[0.05] p-3 text-stone-200 shadow-[0_4px_20px_-8px_rgba(0,0,0,0.3)] backdrop-blur-xl transition-all hover:scale-[1.03] hover:bg-white/[0.08]"
+              className="group flex flex-col items-center gap-1.5 rounded-2xl border border-stone-200 bg-white/80 p-3 text-stone-700 shadow-sm backdrop-blur-xl transition-all hover:scale-[1.03] hover:bg-white dark:border-white/[0.06] dark:bg-white/[0.05] dark:text-stone-200 dark:shadow-[0_4px_20px_-8px_rgba(0,0,0,0.3)] dark:hover:bg-white/[0.08]"
             >
-              <Wind className="h-5 w-5 text-teal-400" />
+              <Wind className="h-5 w-5 text-teal-600 dark:text-teal-400" />
               <span className="text-xs font-semibold">Breathe</span>
             </Link>
             <Link
               href="/focus"
-              className="group flex flex-col items-center gap-1.5 rounded-2xl border border-white/[0.06] bg-white/[0.05] p-3 text-stone-200 shadow-[0_4px_20px_-8px_rgba(0,0,0,0.3)] backdrop-blur-xl transition-all hover:scale-[1.03] hover:bg-white/[0.08]"
+              className="group flex flex-col items-center gap-1.5 rounded-2xl border border-stone-200 bg-white/80 p-3 text-stone-700 shadow-sm backdrop-blur-xl transition-all hover:scale-[1.03] hover:bg-white dark:border-white/[0.06] dark:bg-white/[0.05] dark:text-stone-200 dark:shadow-[0_4px_20px_-8px_rgba(0,0,0,0.3)] dark:hover:bg-white/[0.08]"
             >
-              <Sparkles className="h-5 w-5 text-violet-400" />
+              <Sparkles className="h-5 w-5 text-violet-600 dark:text-violet-400" />
               <span className="text-xs font-semibold">Plan</span>
             </Link>
           </motion.div>
@@ -144,7 +144,7 @@ export function CompanionHome({ firstName }: CompanionHomeProps) {
           transition={{ delay: 0.3, duration: 0.5 }}
           className="grid gap-3 sm:grid-cols-[auto_1fr]"
         >
-          <div className="flex items-center justify-center rounded-2xl border border-white/[0.06] bg-white/[0.05] p-4 shadow-[0_4px_24px_-8px_rgba(0,0,0,0.3)] backdrop-blur-xl">
+          <div className="flex items-center justify-center rounded-2xl border border-stone-200 bg-white/80 p-4 shadow-sm backdrop-blur-xl dark:border-white/[0.06] dark:bg-white/[0.05] dark:shadow-[0_4px_24px_-8px_rgba(0,0,0,0.3)]">
             <LifeScoreRing size={100} />
           </div>
           <LevelBadge />

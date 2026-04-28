@@ -45,7 +45,7 @@ export function LevelBadge({ compact = false }: { compact?: boolean }) {
   }
 
   return (
-    <div className="rounded-2xl border border-white/[0.06] bg-gradient-to-br from-white/[0.06] via-white/[0.03] to-white/[0.06] p-4 shadow-[0_4px_24px_-8px_rgba(0,0,0,0.3)] backdrop-blur-xl">
+    <div className="rounded-2xl border border-stone-200 bg-white/80 p-4 shadow-sm backdrop-blur-xl dark:border-white/[0.06] dark:bg-gradient-to-br dark:from-white/[0.06] dark:via-white/[0.03] dark:to-white/[0.06] dark:shadow-[0_4px_24px_-8px_rgba(0,0,0,0.3)]">
       <div className="flex items-center gap-3">
         <motion.div
           animate={{
@@ -66,8 +66,8 @@ export function LevelBadge({ compact = false }: { compact?: boolean }) {
               Level {state.level}
             </span>
           </div>
-          <p className="text-sm font-semibold text-stone-100">{state.total} XP total</p>
-          <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-white/10">
+          <p className="text-sm font-semibold text-stone-800 dark:text-stone-100">{state.total} XP total</p>
+          <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-stone-200 dark:bg-white/10">
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${state.progress * 100}%` }}
