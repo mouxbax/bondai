@@ -37,6 +37,7 @@ const mobileItems = [
 const sideItems = [
   { href: "/home", label: "Home", icon: Home },
   { href: "/talk", label: "Talk", icon: MessageCircle },
+  { href: "/plans", label: "Life OS", icon: CalendarDays },
   { href: "/breathe", label: "Breathe", icon: Wind },
 ];
 
