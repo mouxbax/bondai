@@ -79,7 +79,8 @@ function getItemIcon(iconName: string | null) {
 export default function ShopPage() {
   const [items, setItems] = useState<ShopItem[]>([]);
   const [coins, setCoins] = useState(0);
-  const [_equipped, setEquipped] = useState<Record<string, string>>({});
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [equipped, setEquipped] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [buying, setBuying] = useState<string | null>(null);
   const [filter, setFilter] = useState<Category>("ALL");
