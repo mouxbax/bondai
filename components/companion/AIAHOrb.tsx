@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 
 export type OrbMood = "calm" | "happy" | "anxious" | "sad" | "focused" | "energetic" | "tender";
 
@@ -30,8 +30,18 @@ const moodConfig: Record<OrbMood, {
   tender:    { colors: ["#EC4899", "#F9A8D4", "#FCE7F3"], speed: 0.8, intensity: 0.7 },
 };
 
-// ─── Kawaii face component ──────────────────────────────────────────────────
-function KawaiiFace({ energy = 100, speaking = false, mood }: { energy: number; speaking: boolean; mood: OrbMood }) {
+// ─── Kawaii face component with cursor-tracking eyes ────────────────────────
+function KawaiiFace({
+  energy = 100,
+  speaking = false,
+  mood,
+  pupilOffset,
+}: {
+  energy: number;
+  speaking: boolean;
+  mood: OrbMood;
+  pupilOffset: { x: number; y: number }; // -1 to 1 range
+}) {
   const [blinking, setBlinking] = useState(false);
 
   // Blink every 3-5 seconds
@@ -54,15 +64,22 @@ function KawaiiFace({ energy = 100, speaking = false, mood }: { energy: number; 
   const sleeping = energy <= 0;
   const tired = energy > 0 && energy <= 20;
 
-  // Sleeping face: closed eyes (lines) + tiny "z"
+  // Eye config
+  const eyeRadius = tired ? 7 : 9; // bigger eyes
+  const pupilRadius = tired ? 3 : 4;
+  const maxPupilTravel = eyeRadius - pupilRadius - 1;
+  const px = pupilOffset.x * maxPupilTravel;
+  const py = pupilOffset.y * maxPupilTravel;
+
+  // Sleeping face: closed eyes (arcs) + tiny "z"
   if (sleeping) {
     return (
       <g opacity="0.7">
         {/* Closed left eye */}
-        <motion.line x1="78" y1="92" x2="88" y2="92" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+        <path d="M74 92 Q83 97 92 92" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
         {/* Closed right eye */}
-        <motion.line x1="112" y1="92" x2="122" y2="92" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-        {/* Sleepy mouth — flat line */}
+        <path d="M108 92 Q117 97 126 92" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+        {/* Sleepy mouth */}
         <line x1="93" y1="115" x2="107" y2="115" stroke="white" strokeWidth="2" strokeLinecap="round" opacity="0.6" />
         {/* Zzz */}
         <motion.text
@@ -87,33 +104,39 @@ function KawaiiFace({ energy = 100, speaking = false, mood }: { energy: number; 
     <g>
       {/* Left eye */}
       {blinking ? (
-        <line x1="78" y1="92" x2="88" y2="92" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+        <path d="M74 92 Q83 97 92 92" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
       ) : (
-        <circle cx="83" cy="92" r={tired ? 3 : 4} fill="white" />
+        <g>
+          <circle cx="83" cy="92" r={eyeRadius} fill="white" opacity="0.95" />
+          <circle cx={83 + px} cy={92 + py} r={pupilRadius} fill="#0b1210" />
+          {/* Eye shine */}
+          <circle cx={83 + px - 1.5} cy={92 + py - 1.5} r="1.5" fill="white" opacity="0.8" />
+        </g>
       )}
       {/* Right eye */}
       {blinking ? (
-        <line x1="112" y1="92" x2="122" y2="92" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+        <path d="M108 92 Q117 97 126 92" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
       ) : (
-        <circle cx="117" cy="92" r={tired ? 3 : 4} fill="white" />
+        <g>
+          <circle cx="117" cy="92" r={eyeRadius} fill="white" opacity="0.95" />
+          <circle cx={117 + px} cy={92 + py} r={pupilRadius} fill="#0b1210" />
+          {/* Eye shine */}
+          <circle cx={117 + px - 1.5} cy={92 + py - 1.5} r="1.5" fill="white" opacity="0.8" />
+        </g>
       )}
 
       {/* Mouth */}
       {speaking ? (
-        // Speaking: small open circle
         <motion.ellipse
           cx="100" cy="113" rx="5" ry="4" fill="white" opacity="0.8"
           animate={{ ry: [3, 5, 3] }}
           transition={{ duration: 0.4, repeat: Infinity }}
         />
       ) : mood === "happy" || mood === "energetic" ? (
-        // Happy: bigger smile
         <path d="M90 110 Q100 122 110 110" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" />
       ) : tired ? (
-        // Tired: wavy line
         <path d="M92 114 Q96 117 100 114 Q104 111 108 114" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" opacity="0.6" />
       ) : (
-        // Default: gentle curve smile
         <path d="M93 112 Q100 119 107 112" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" />
       )}
     </g>
@@ -163,12 +186,38 @@ export function AIAHOrb({
 }: AIAHOrbProps) {
   const config = moodConfig[mood];
   const id = useMemo(() => `orb-${Math.random().toString(36).slice(2, 9)}`, []);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [pupilOffset, setPupilOffset] = useState({ x: 0, y: 0 });
+
+  // Track cursor position relative to orb center
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const dx = e.clientX - cx;
+    const dy = e.clientY - cy;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const maxDist = Math.max(rect.width, 400); // normalize over a reasonable range
+    const norm = Math.min(dist / maxDist, 1);
+    setPupilOffset({
+      x: dist > 0 ? (dx / dist) * norm : 0,
+      y: dist > 0 ? (dy / dist) * norm : 0,
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!showFace) return;
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, [showFace, handleMouseMove]);
 
   const breathDuration = energy <= 0 ? 6 : 4 / config.speed; // Slower breathing when sleeping
   const active = speaking || listening || thinking;
 
   return (
     <motion.div
+      ref={containerRef}
       className="relative inline-block cursor-pointer select-none"
       style={{ width: size, height: size }}
       onClick={onClick}
@@ -306,7 +355,7 @@ export function AIAHOrb({
 
         {/* Kawaii face */}
         {showFace && (
-          <KawaiiFace energy={energy} speaking={speaking} mood={mood} />
+          <KawaiiFace energy={energy} speaking={speaking} mood={mood} pupilOffset={pupilOffset} />
         )}
 
         {/* Speaking waveform */}
