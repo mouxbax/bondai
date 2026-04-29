@@ -32,8 +32,28 @@ export async function POST(request: NextRequest) {
         const userId = getUserIdFromCustomer(customer);
 
         if (userId) {
-          // Get subscription details
-          if (session.subscription) {
+          // Handle coin purchase (payment mode)
+          if (session.mode === 'payment' && session.metadata?.coins) {
+            const coinsToAdd = parseInt(session.metadata.coins, 10);
+            const packId = session.metadata.packId || 'unknown';
+
+            // Credit the user's coins
+            await prisma.user.update({
+              where: { id: userId },
+              data: {
+                coins: {
+                  increment: coinsToAdd,
+                },
+              },
+            });
+
+            console.log(
+              `[COINS_PURCHASE] User ${userId} purchased pack ${packId} and received ${coinsToAdd} coins`
+            );
+          }
+
+          // Handle subscription purchase (subscription mode)
+          if (session.mode === 'subscription' && session.subscription) {
             const subscription = await stripe.subscriptions.retrieve(
               session.subscription as string
             );
