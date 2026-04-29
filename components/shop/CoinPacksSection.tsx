@@ -12,6 +12,7 @@ interface CoinPacksSectionProps {
   onPurchaseSuccess?: () => void;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function CoinPacksSection({ currentCoins, onPurchaseSuccess }: CoinPacksSectionProps) {
   const [purchasing, setPurchasing] = useState<string | null>(null);
   const [purchaseSuccess, setPurchaseSuccess] = useState(false);
