@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Coins, Sparkles, Loader2, Check } from 'lucide-react';
+import { Coins, Sparkles, Loader2, Check, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { getAllPacks, getTotalCoins } from '@/lib/coin-packs';
@@ -15,16 +15,15 @@ interface CoinPacksSectionProps {
 export function CoinPacksSection({ currentCoins, onPurchaseSuccess }: CoinPacksSectionProps) {
   const [purchasing, setPurchasing] = useState<string | null>(null);
   const [purchaseSuccess, setPurchaseSuccess] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const packs = getAllPacks();
 
   useEffect(() => {
-    // Check if purchase was successful via URL param
     const params = new URLSearchParams(window.location.search);
     if (params.get('purchase') === 'success') {
       setPurchaseSuccess(true);
       const timer = setTimeout(() => {
         setPurchaseSuccess(false);
-        // Clear the URL param
         window.history.replaceState({}, '', '/shop');
         onPurchaseSuccess?.();
       }, 3000);
@@ -58,28 +57,8 @@ export function CoinPacksSection({ currentCoins, onPurchaseSuccess }: CoinPacksS
     }
   };
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.2,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.4 },
-    },
-  };
-
   return (
-    <div className="relative">
+    <>
       {/* Success toast */}
       {purchaseSuccess && (
         <motion.div
@@ -89,151 +68,112 @@ export function CoinPacksSection({ currentCoins, onPurchaseSuccess }: CoinPacksS
           className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 rounded-xl bg-emerald-500/90 px-4 py-3 text-sm font-medium text-white shadow-xl backdrop-blur-sm flex items-center gap-2"
         >
           <Check className="h-4 w-4" />
-          Coins purchased! Check your balance.
+          Coins added to your balance!
         </motion.div>
       )}
 
-      {/* Gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-orange-500/5 dark:from-amber-500/10 dark:to-orange-500/10 rounded-3xl pointer-events-none" />
+      {/* Compact toggle bar */}
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center justify-between px-4 py-3 md:px-8 border-b border-stone-200 dark:border-white/[0.06] hover:bg-stone-50 dark:hover:bg-white/[0.02] transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <Coins className="h-4 w-4 text-amber-500" />
+          <span className="text-sm font-medium text-stone-700 dark:text-stone-300">
+            Need more coins?
+          </span>
+        </div>
+        <ChevronRight
+          className={cn(
+            "h-4 w-4 text-stone-400 transition-transform duration-200",
+            expanded && "rotate-90"
+          )}
+        />
+      </button>
 
-      <div className="relative px-4 py-8 md:px-8 md:py-10">
-        {/* Header */}
+      {/* Expandable packs row */}
+      {expanded && (
         <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="mb-8"
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: 'auto', opacity: 1 }}
+          exit={{ height: 0, opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="border-b border-stone-200 dark:border-white/[0.06] bg-stone-50/50 dark:bg-white/[0.01]"
         >
-          <div className="flex items-center gap-2 mb-2">
-            <Sparkles className="h-5 w-5 text-amber-500 dark:text-amber-400" />
-            <h2 className="text-lg md:text-xl font-bold text-stone-900 dark:text-white">
-              Get More Coins
-            </h2>
-          </div>
-          <p className="text-sm text-stone-600 dark:text-stone-400">
-            Coins are used to feed and customize your companion
-          </p>
+          <div className="px-4 py-4 md:px-8">
+            <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
+              {packs.map((pack) => {
+                const isPopular = pack.id === 'popular';
+                const totalCoins = getTotalCoins(pack);
+                const priceInDollars = (pack.price / 100).toFixed(2);
 
-          {/* Current balance */}
-          <div className="mt-4 flex items-center gap-2 w-fit rounded-2xl bg-amber-50 dark:bg-amber-900/30 px-4 py-2 border border-amber-200 dark:border-amber-500/30">
-            <Coins className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-            <span className="text-sm font-semibold text-amber-700 dark:text-amber-300">
-              {currentCoins} coins
-            </span>
-          </div>
-        </motion.div>
-
-        {/* Coin packs grid */}
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-8"
-        >
-          {packs.map((pack) => {
-            const isPopular = pack.id === 'popular';
-            const totalCoins = getTotalCoins(pack);
-            const priceInDollars = (pack.price / 100).toFixed(2);
-
-            return (
-              <motion.div
-                key={pack.id}
-                variants={itemVariants}
-                whileHover={isPopular ? { scale: 1.02 } : { scale: 1.01 }}
-                className={cn(
-                  'relative rounded-2xl border p-5 bg-white dark:bg-white/[0.02] transition-all',
-                  isPopular
-                    ? 'border-amber-200 dark:border-amber-500/40 shadow-lg dark:shadow-amber-500/10'
-                    : 'border-stone-200 dark:border-white/[0.08]'
-                )}
-              >
-                {/* Badge */}
-                {pack.badge && (
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                    <span className="inline-block bg-gradient-to-r from-amber-400 to-orange-400 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-lg">
-                      {pack.badge}
-                    </span>
-                  </div>
-                )}
-
-                <div className={isPopular ? 'pt-2' : ''}>
-                  {/* Pack name */}
-                  <h3 className="font-semibold text-stone-900 dark:text-white text-sm mb-1">
-                    {pack.name}
-                  </h3>
-
-                  {/* Coin amount with gradient */}
-                  <div className="mb-3">
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-2xl font-bold bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent">
-                        {totalCoins}
-                      </span>
-                      <span className="text-sm text-stone-500 dark:text-stone-400">coins</span>
-                    </div>
-
-                    {/* Bonus coins tag */}
-                    {pack.bonusCoins > 0 && (
-                      <div className="mt-2 inline-flex items-center gap-1 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 px-2.5 py-1 rounded-full text-[10px] font-semibold border border-emerald-200 dark:border-emerald-500/30">
-                        <Sparkles className="h-3 w-3" />
-                        +{pack.bonusCoins} bonus
+                return (
+                  <div
+                    key={pack.id}
+                    className={cn(
+                      'relative flex-shrink-0 w-[160px] rounded-xl border p-3 bg-white dark:bg-white/[0.03] transition-all',
+                      isPopular
+                        ? 'border-amber-200 dark:border-amber-500/30'
+                        : 'border-stone-200 dark:border-white/[0.08]'
+                    )}
+                  >
+                    {/* Badge */}
+                    {pack.badge && (
+                      <div className="absolute -top-2 left-1/2 -translate-x-1/2">
+                        <span className="inline-block bg-gradient-to-r from-amber-400 to-orange-400 text-white text-[8px] font-bold px-2 py-0.5 rounded-full">
+                          {pack.badge}
+                        </span>
                       </div>
                     )}
-                  </div>
 
-                  {/* Description */}
-                  <p className="text-xs text-stone-600 dark:text-stone-400 mb-4">
-                    {pack.description}
-                  </p>
+                    <div className={pack.badge ? 'pt-1' : ''}>
+                      {/* Coin amount */}
+                      <div className="flex items-baseline gap-1 mb-1">
+                        <span className="text-lg font-bold bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent">
+                          {totalCoins}
+                        </span>
+                        <span className="text-[10px] text-stone-400">coins</span>
+                      </div>
 
-                  {/* Price and button */}
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <span className="text-xl font-bold text-stone-900 dark:text-white">
-                        ${priceInDollars}
-                      </span>
+                      {/* Bonus tag */}
                       {pack.bonusCoins > 0 && (
-                        <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
-                          Best value
-                        </p>
+                        <div className="inline-flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400 text-[9px] font-medium mb-2">
+                          <Sparkles className="h-2.5 w-2.5" />
+                          +{pack.bonusCoins} bonus
+                        </div>
                       )}
+
+                      {/* Price + Buy */}
+                      <div className="flex items-center justify-between gap-2 mt-1">
+                        <span className="text-sm font-bold text-stone-900 dark:text-white">
+                          ${priceInDollars}
+                        </span>
+                        <Button
+                          size="sm"
+                          onClick={() => handleBuyCoinPack(pack.id)}
+                          disabled={purchasing === pack.id}
+                          className={cn(
+                            'h-7 px-3 rounded-lg text-xs font-semibold',
+                            isPopular
+                              ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white'
+                              : ''
+                          )}
+                        >
+                          {purchasing === pack.id ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            'Buy'
+                          )}
+                        </Button>
+                      </div>
                     </div>
-
-                    <Button
-                      onClick={() => handleBuyCoinPack(pack.id)}
-                      disabled={purchasing === pack.id}
-                      className={cn(
-                        'flex-1 rounded-xl text-sm font-semibold',
-                        isPopular
-                          ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg'
-                          : ''
-                      )}
-                    >
-                      {purchasing === pack.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        'Buy'
-                      )}
-                    </Button>
                   </div>
-                </div>
-              </motion.div>
-            );
-          })}
+                );
+              })}
+            </div>
+          </div>
         </motion.div>
-
-        {/* Divider */}
-        <div className="flex items-center gap-3 mb-8">
-          <div className="flex-1 h-px bg-gradient-to-r from-stone-200 to-transparent dark:from-white/[0.08] to-transparent" />
-          <span className="text-xs font-medium text-stone-400 dark:text-stone-500 px-2">
-            Or
-          </span>
-          <div className="flex-1 h-px bg-gradient-to-l from-stone-200 to-transparent dark:from-white/[0.08] to-transparent" />
-        </div>
-
-        <h3 className="font-semibold text-stone-900 dark:text-white mb-4 text-sm">
-          Buy Individual Items
-        </h3>
-      </div>
-    </div>
+      )}
+    </>
   );
 }

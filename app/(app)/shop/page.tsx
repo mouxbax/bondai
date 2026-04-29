@@ -174,7 +174,8 @@ export default function ShopPage() {
         />
 
         {/* Shop items section */}
-        <div className="px-4 md:px-8 pb-4">
+        <div className="px-4 md:px-8 pb-4 pt-4">
+          <h3 className="font-semibold text-stone-900 dark:text-white text-sm mb-3">Shop Items</h3>
           {/* Category filter */}
           <div className="flex gap-2 py-3 overflow-x-auto no-scrollbar mb-4">
             {categories.map((cat) => (
