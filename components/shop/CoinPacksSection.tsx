@@ -127,7 +127,7 @@ export const CoinPacksSection = forwardRef<CoinPacksSectionRef, CoinPacksSection
                   <div
                     key={pack.id}
                     className={cn(
-                      'relative flex-shrink-0 w-[160px] rounded-xl border p-3 bg-white dark:bg-white/[0.03] transition-all',
+                      'relative flex flex-col flex-shrink-0 w-[160px] rounded-xl border p-3 pt-4 bg-white dark:bg-white/[0.03] transition-all',
                       isPopular
                         ? 'border-amber-200 dark:border-amber-500/30'
                         : 'border-stone-200 dark:border-white/[0.08]'
@@ -142,46 +142,46 @@ export const CoinPacksSection = forwardRef<CoinPacksSectionRef, CoinPacksSection
                       </div>
                     )}
 
-                    <div className={pack.badge ? 'pt-1' : ''}>
-                      {/* Coin amount */}
-                      <div className="flex items-baseline gap-1 mb-1">
-                        <span className="text-lg font-bold bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent">
-                          {totalCoins}
-                        </span>
-                        <span className="text-[10px] text-stone-400">coins</span>
-                      </div>
+                    {/* Coin amount */}
+                    <div className="flex items-baseline gap-1 mb-1">
+                      <span className="text-lg font-bold bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent">
+                        {totalCoins}
+                      </span>
+                      <span className="text-[10px] text-stone-400">coins</span>
+                    </div>
 
-                      {/* Bonus tag */}
+                    {/* Bonus tag — fixed height so cards align */}
+                    <div className="h-5 mb-1">
                       {pack.bonusCoins > 0 && (
-                        <div className="inline-flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400 text-[9px] font-medium mb-2">
+                        <div className="inline-flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400 text-[9px] font-medium">
                           <Sparkles className="h-2.5 w-2.5" />
                           +{pack.bonusCoins} bonus
                         </div>
                       )}
+                    </div>
 
-                      {/* Price + Buy */}
-                      <div className="flex items-center justify-between gap-2 mt-1">
-                        <span className="text-sm font-bold text-stone-900 dark:text-white">
-                          ${priceInDollars}
-                        </span>
-                        <Button
-                          size="sm"
-                          onClick={() => handleBuyCoinPack(pack.id)}
-                          disabled={purchasing === pack.id}
-                          className={cn(
-                            'h-7 px-3 rounded-lg text-xs font-semibold',
-                            isPopular
-                              ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white'
-                              : ''
-                          )}
-                        >
-                          {purchasing === pack.id ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                          ) : (
-                            'Buy'
-                          )}
-                        </Button>
-                      </div>
+                    {/* Price + Buy — always at bottom */}
+                    <div className="flex items-center justify-between gap-2 mt-auto">
+                      <span className="text-sm font-bold text-stone-900 dark:text-white">
+                        ${priceInDollars}
+                      </span>
+                      <Button
+                        size="sm"
+                        onClick={() => handleBuyCoinPack(pack.id)}
+                        disabled={purchasing === pack.id}
+                        className={cn(
+                          'h-7 px-3 rounded-lg text-xs font-semibold',
+                          isPopular
+                            ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white'
+                            : ''
+                        )}
+                      >
+                        {purchasing === pack.id ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          'Buy'
+                        )}
+                      </Button>
                     </div>
                   </div>
                 );
