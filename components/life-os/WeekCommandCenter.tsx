@@ -157,7 +157,7 @@ export function WeekCommandCenter({
         <h3 className="mb-3 text-sm font-medium uppercase tracking-wide text-stone-500">
           Weekly schedule
         </h3>
-        <WeeklyPlanView plan={plan} />
+        <WeeklyPlanView plan={plan} compact />
       </section>
 
       {/* ─── Workouts + Finances row ─────────────────────────── */}
