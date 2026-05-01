@@ -82,6 +82,11 @@ model User {
   lastEnergyUpdate    DateTime  @default(now())   // last time energy was calculated
   lastPlanGeneratedAt DateTime?                   // for 7-day rolling cooldown
 
+  // Companion mood system
+  companionMood       String    @default("happy") // happy, content, lonely, sad
+  lastInteraction     DateTime  @default(now())   // last feed/play/visit
+  moodDecayRate       Int       @default(1)       // mood levels to drop per 24h of no interaction
+
   // Subscription fields
   stripeCustomerId    String?
   subscriptionStatus  String    @default("free") // free, trialing, active, canceled, past_due
@@ -99,11 +104,18 @@ model User {
   pushSubscriptions  PushSubscription[]
   memories           UserMemory[]
   coins               Int       @default(0)       // virtual currency
+  xp                  Int       @default(0)       // total XP earned
+  level               Int       @default(1)       // current level
+  companionName       String    @default("Orb")   // pet name for leaderboard display
 
   lifeOsProfile      LifeOsProfile?
   weeklyPlans        WeeklyPlan[]
   inventory          PetInventory[]
   equippedItems      PetEquipped[]
+  sentGifts          Gift[]         @relation("GiftSender")
+  receivedGifts      Gift[]         @relation("GiftReceiver")
+  nudgesSent         Nudge[]        @relation("NudgeSender")
+  nudgesReceived     Nudge[]        @relation("NudgeReceiver")
 
   @@index([subscriptionStatus])
   @@index([stripeCustomerId])
@@ -318,6 +330,7 @@ model ShopItem {
 
   inventory   PetInventory[]
   equipped    PetEquipped[]
+  gifts       Gift[]
 }
 
 /// Items a user owns (quantity tracked for consumables)
@@ -361,4 +374,40 @@ model CrisisLog {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
+}
+
+// ─── Gift Economy ─────────────────────────────────────────────────────────────
+
+/// Gifts sent between users (items from inventory)
+model Gift {
+  id         String   @id @default(cuid())
+  senderId   String
+  receiverId String
+  itemId     String
+  quantity   Int      @default(1)
+  message    String?                     // optional gift note
+  status     String   @default("pending") // pending, accepted, declined
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  sender   User     @relation("GiftSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User     @relation("GiftReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  item     ShopItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([receiverId, status])
+  @@index([senderId, createdAt])
+}
+
+/// Nudges — friends reminding each other to take care of their companion
+model Nudge {
+  id         String   @id @default(cuid())
+  senderId   String
+  receiverId String
+  message    String   @default("Hey! Your companion misses you 🥺")
+  createdAt  DateTime @default(now())
+
+  sender   User @relation("NudgeSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User @relation("NudgeReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@index([receiverId, createdAt])
 }

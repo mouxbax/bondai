@@ -54,6 +54,7 @@ const planSubItems = [
 const moreItems = [
   { href: "/companion", label: "Companion", icon: Globe },
   { href: "/shop", label: "Pet Shop", icon: Store },
+  { href: "/leaderboard", label: "Leaderboard", icon: Trophy },
   { href: "/mood", label: "Mood Check", icon: Heart },
   { href: "/coaching", label: "Practice", icon: GraduationCap },
   { href: "/people", label: "Circle", icon: Users },

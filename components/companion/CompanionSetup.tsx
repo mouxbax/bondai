@@ -17,6 +17,8 @@ import { Button } from "@/components/ui/button";
 import { Check, Pencil, Volume2, VolumeX } from "lucide-react";
 import { CompanionInventory } from "@/components/companion/CompanionInventory";
 import { ProfileCard } from "@/components/companion/ProfileCard";
+import { MoodBadge } from "@/components/companion/MoodBadge";
+import { GiftInbox } from "@/components/companion/GiftInbox";
 import { getEvolutionInfo } from "@/lib/evolution";
 import { sfx } from "@/lib/sfx";
 import { haptic } from "@/lib/haptics";
@@ -34,6 +36,8 @@ export function CompanionSetup() {
     const c = getCompanionConfig();
     setCfg(c);
     setDraftName(c.name);
+    // Record interaction (visiting = caring for companion, improves mood)
+    fetch("/api/pet/mood", { method: "POST" }).catch(() => {});
   }, []);
 
   const persist = (patch: Partial<CompanionConfig>, flashLabel?: string) => {
@@ -120,12 +124,15 @@ export function CompanionSetup() {
               )}
             </div>
 
+            {/* Companion mood */}
+            <MoodBadge />
+
             <p className={`text-center text-[10px] max-w-[180px] ${theme.textMuted}`}>
               Tap to interact. Hold to purr. Pet to make shy.
             </p>
           </div>
 
-          {/* Right column: Fridge + Closet */}
+          {/* Right column: Fridge + Closet + Gifts */}
           <div className="flex-1 min-w-0 w-full">
             <CompanionInventory
               energy={energy}
@@ -136,6 +143,10 @@ export function CompanionSetup() {
                 haptic("success");
               }}
             />
+            {/* Gift inbox */}
+            <div className="mt-5">
+              <GiftInbox />
+            </div>
           </div>
         </div>
 

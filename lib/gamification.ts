@@ -113,7 +113,21 @@ export function awardXP(type: XPEvent, note?: string): { state: XPState; leveled
   write(KEY_EVENTS, events.slice(0, 200));
 
   const after = xpToLevel(newTotal);
+
+  // Sync to server for leaderboard
+  syncXPToServer(newTotal);
+
   return { state: after, leveledUp: after.level > before.level, gained: amount };
+}
+
+/** Fire-and-forget XP sync to server DB (for leaderboard). */
+function syncXPToServer(totalXp: number) {
+  if (typeof window === "undefined") return;
+  fetch("/api/pet/xp", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ totalXp }),
+  }).catch(() => { /* silent fail — will sync next time */ });
 }
 
 // ============ LIFE SCORE ============

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db/prisma";
 import { calculateCurrentEnergy, MAX_ENERGY } from "@/lib/energy";
+import { calculateCurrentMood, improveMood } from "@/lib/companion-mood";
 
 export const dynamic = "force-dynamic";
 
@@ -49,7 +50,7 @@ export async function POST(req: Request) {
   // Transaction: decrement quantity + apply energy boost
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { energy: true, lastEnergyUpdate: true },
+    select: { energy: true, lastEnergyUpdate: true, companionMood: true, lastInteraction: true, moodDecayRate: true },
   });
 
   if (!user) {
@@ -72,16 +73,20 @@ export async function POST(req: Request) {
       data: { quantity: { decrement: 1 } },
     });
 
-    // Apply energy boost if any
-    if (energyBoost > 0) {
-      await tx.user.update({
-        where: { id: session.user.id },
-        data: {
-          energy: Math.min(MAX_ENERGY, currentEnergy + energyBoost),
-          lastEnergyUpdate: now,
-        },
-      });
-    }
+    // Apply energy boost + mood improvement
+    const currentMood = calculateCurrentMood(user.companionMood, user.lastInteraction, user.moodDecayRate, now);
+    const newMood = improveMood(currentMood);
+
+    await tx.user.update({
+      where: { id: session.user.id },
+      data: {
+        ...(energyBoost > 0
+          ? { energy: Math.min(MAX_ENERGY, currentEnergy + energyBoost), lastEnergyUpdate: now }
+          : {}),
+        companionMood: newMood,
+        lastInteraction: now,
+      },
+    });
   });
 
   return NextResponse.json({
