@@ -337,6 +337,7 @@ export function AIAHOrb({
   }, []);
 
   const onTouchEnd = useCallback(() => {
+    lastTouchEndTime.current = Date.now();
     if (holdTimerRef.current) {
       clearTimeout(holdTimerRef.current);
       holdTimerRef.current = null;
@@ -346,11 +347,21 @@ export function AIAHOrb({
       applyTouchMood("shy", 2500);
       playReaction("shy");
     }
+    // Single tap without hold or petting — play tap sound
+    if (touchMoveCountRef.current < 3 && touchStartRef.current) {
+      const elapsed = Date.now() - touchStartRef.current.time;
+      if (elapsed < 300 && elapsed > 0) {
+        playReaction("tap");
+      }
+    }
     touchStartRef.current = null;
   }, [applyTouchMood, playReaction]);
 
-  // Desktop click reaction (single click plays tap sound + haptic)
+  // Desktop click reaction (plays tap sound + haptic)
+  // Suppress click if we just had a touch interaction (avoids double-fire on mobile)
+  const lastTouchEndTime = useRef(0);
   const handleClick = useCallback(() => {
+    if (Date.now() - lastTouchEndTime.current < 500) return; // skip ghost click from touch
     playReaction("tap");
     onClick?.();
   }, [onClick, playReaction]);

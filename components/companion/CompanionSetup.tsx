@@ -17,6 +17,8 @@ import { Button } from "@/components/ui/button";
 import { Check, Pencil, Volume2, VolumeX } from "lucide-react";
 import { CompanionInventory } from "@/components/companion/CompanionInventory";
 import { getEvolutionInfo } from "@/lib/evolution";
+import { sfx } from "@/lib/sfx";
+import { haptic } from "@/lib/haptics";
 import type { OrbMood } from "@/components/companion/AIAHOrb";
 
 export function CompanionSetup() {
@@ -197,9 +199,11 @@ export function CompanionSetup() {
         {/* Inventory / Treats */}
         <CompanionInventory
           onFed={(result) => {
-            if (result.moodBoost) {
-              setMood(result.moodBoost as OrbMood);
-            }
+            // Trigger orb reaction — happy mood + purr
+            const newMood = (result.moodBoost as OrbMood) || "happy";
+            setMood(newMood);
+            sfx.purr();
+            haptic("success");
           }}
         />
 

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Apple, Droplets, ShoppingBag, Loader2, Package } from "lucide-react";
+import { Loader2, Package } from "lucide-react";
 import Link from "next/link";
 import { sfx } from "@/lib/sfx";
 import { haptic } from "@/lib/haptics";
@@ -25,12 +25,29 @@ interface CompanionInventoryProps {
   onFed?: (result: { item: string; energyRestored?: number; moodBoost?: string }) => void;
 }
 
-function getItemIcon(iconName: string | null) {
-  switch (iconName) {
-    case "apple": return <Apple className="h-5 w-5" />;
-    case "droplets": return <Droplets className="h-5 w-5" />;
-    default: return <ShoppingBag className="h-5 w-5" />;
-  }
+/** Map item icon/slug to emoji */
+const ITEM_EMOJI: Record<string, string> = {
+  apple: "🍎",
+  pizza: "🍕",
+  sushi: "🍣",
+  cake: "🎂",
+  droplets: "💧",
+  coffee: "🍵",
+  zap: "⚡",
+  crown: "👑",
+  glasses: "🕶️",
+  shirt: "🎀",
+  sparkles: "✨",
+  star: "⭐",
+  "flower-2": "🌸",
+  binary: "💻",
+  drama: "🎭",
+  flame: "🔥",
+};
+
+function getEmoji(icon: string | null): string {
+  if (!icon) return "🎁";
+  return ITEM_EMOJI[icon] ?? "🎁";
 }
 
 export function CompanionInventory({ onFed }: CompanionInventoryProps) {
@@ -39,7 +56,7 @@ export function CompanionInventory({ onFed }: CompanionInventoryProps) {
   const [feeding, setFeeding] = useState<string | null>(null);
   const [feedResult, setFeedResult] = useState<string | null>(null);
   const [dragItem, setDragItem] = useState<string | null>(null);
-  const dragStartPos = useRef<{ x: number; y: number } | null>(null);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
   const fetchInventory = useCallback(async () => {
     try {
@@ -66,9 +83,10 @@ export function CompanionInventory({ onFed }: CompanionInventoryProps) {
       });
       const data = await res.json();
       if (res.ok) {
-        sfx.pop();
+        sfx.purr();
         haptic("success");
-        setFeedResult(`Fed ${data.item}!${data.energyRestored ? ` +${data.energyRestored}% energy` : ""}`);
+        const emoji = getEmoji(data.icon);
+        setFeedResult(`${emoji} Fed ${data.item}!${data.energyRestored ? ` +${data.energyRestored}% energy` : ""}`);
         onFed?.(data);
         fetchInventory();
         setTimeout(() => setFeedResult(null), 2500);
@@ -76,31 +94,71 @@ export function CompanionInventory({ onFed }: CompanionInventoryProps) {
     } finally {
       setFeeding(null);
       setDragItem(null);
+      setDragOffset({ x: 0, y: 0 });
     }
   }, [fetchInventory, onFed]);
 
-  // Handle touch/drag to feed
-  const handleDragStart = useCallback((itemId: string, e: React.TouchEvent | React.MouseEvent) => {
+  // Unified drag handlers for touch
+  const handleTouchStart = useCallback((itemId: string, e: React.TouchEvent) => {
+    e.stopPropagation();
+    const t = e.touches[0];
     setDragItem(itemId);
-    const pos = "touches" in e ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : { x: e.clientX, y: e.clientY };
-    dragStartPos.current = pos;
-  }, []);
+    setDragOffset({ x: 0, y: 0 });
+    // Store start position in a data attribute approach via closure
+    const startX = t.clientX;
+    const startY = t.clientY;
 
-  const handleDragEnd = useCallback((itemId: string, e: React.TouchEvent | React.MouseEvent) => {
-    if (!dragStartPos.current) return;
-    const end = "changedTouches" in e
-      ? { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY }
-      : { x: e.clientX, y: e.clientY };
+    const onMove = (ev: TouchEvent) => {
+      ev.preventDefault();
+      const ct = ev.touches[0];
+      setDragOffset({
+        x: ct.clientX - startX,
+        y: ct.clientY - startY,
+      });
+    };
+    const onEnd = (ev: TouchEvent) => {
+      const ct = ev.changedTouches[0];
+      const dy = ct.clientY - startY;
+      if (dy < -80) {
+        feedItem(itemId);
+      } else {
+        setDragItem(null);
+        setDragOffset({ x: 0, y: 0 });
+      }
+      document.removeEventListener("touchmove", onMove);
+      document.removeEventListener("touchend", onEnd);
+    };
+    document.addEventListener("touchmove", onMove, { passive: false });
+    document.addEventListener("touchend", onEnd);
+  }, [feedItem]);
 
-    const dy = dragStartPos.current.y - end.y;
+  // Mouse drag handlers (desktop)
+  const handleMouseDown = useCallback((itemId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    setDragItem(itemId);
+    setDragOffset({ x: 0, y: 0 });
+    const startX = e.clientX;
+    const startY = e.clientY;
 
-    // If dragged upward significantly (toward the orb), feed
-    if (dy > 60) {
-      feedItem(itemId);
-    } else {
-      setDragItem(null);
-    }
-    dragStartPos.current = null;
+    const onMove = (ev: MouseEvent) => {
+      setDragOffset({
+        x: ev.clientX - startX,
+        y: ev.clientY - startY,
+      });
+    };
+    const onUp = (ev: MouseEvent) => {
+      const dy = ev.clientY - startY;
+      if (dy < -80) {
+        feedItem(itemId);
+      } else {
+        setDragItem(null);
+        setDragOffset({ x: 0, y: 0 });
+      }
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
   }, [feedItem]);
 
   const consumables = items.filter((i) => i.consumable && i.quantity > 0);
@@ -142,45 +200,80 @@ export function CompanionInventory({ onFed }: CompanionInventoryProps) {
         </div>
       ) : (
         <>
-          <p className="text-[10px] text-stone-400 dark:text-stone-500 mb-2">
+          <p className="text-[10px] text-stone-400 dark:text-stone-500 mb-3 text-center">
             Drag a treat up toward your companion to feed it
           </p>
-          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+
+          {/* Drop zone indicator */}
+          <AnimatePresence>
+            {dragItem && dragOffset.y < -30 && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                className="flex items-center justify-center mb-3"
+              >
+                <div className={`rounded-full border-2 border-dashed px-4 py-1.5 text-[10px] font-medium transition-colors ${
+                  dragOffset.y < -80
+                    ? "border-emerald-400 text-emerald-500 dark:text-emerald-400 bg-emerald-500/10"
+                    : "border-stone-400/40 text-stone-400 dark:text-stone-500"
+                }`}>
+                  {dragOffset.y < -80 ? "✨ Release to feed!" : "↑ Keep dragging up..."}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <div className="flex gap-3 justify-center flex-wrap">
             {consumables.map((item) => {
               const isDragging = dragItem === item.id;
+              const emoji = getEmoji(item.icon);
+              const rarityRing =
+                item.rarity === "legendary"
+                  ? "ring-amber-400/60"
+                  : item.rarity === "rare"
+                    ? "ring-violet-400/60"
+                    : "";
+
               return (
                 <motion.div
                   key={item.id}
-                  className={`relative flex-shrink-0 w-[90px] rounded-2xl border p-3 bg-white dark:bg-white/[0.03] cursor-grab active:cursor-grabbing select-none transition-all ${
+                  className={`relative flex-shrink-0 rounded-2xl border p-3 cursor-grab active:cursor-grabbing select-none touch-none transition-all ${
                     isDragging
-                      ? "border-emerald-400 dark:border-emerald-500/50 shadow-lg scale-105"
-                      : "border-stone-200 dark:border-white/[0.08]"
-                  }`}
-                  whileTap={{ scale: 1.05 }}
-                  onTouchStart={(e) => handleDragStart(item.id, e)}
-                  onTouchEnd={(e) => handleDragEnd(item.id, e)}
-                  onMouseDown={(e) => handleDragStart(item.id, e)}
-                  onMouseUp={(e) => handleDragEnd(item.id, e)}
-                  animate={isDragging ? { y: -10, opacity: 0.8 } : { y: 0, opacity: 1 }}
+                      ? "border-emerald-400 dark:border-emerald-500/50 shadow-lg shadow-emerald-500/20"
+                      : `border-white/[0.08] hover:border-white/[0.15] ${rarityRing ? `ring-1 ${rarityRing}` : ""}`
+                  } bg-white/[0.04] backdrop-blur-sm`}
+                  style={{
+                    width: 80,
+                    ...(isDragging
+                      ? {
+                          transform: `translate(${dragOffset.x}px, ${dragOffset.y}px) scale(1.15)`,
+                          zIndex: 50,
+                          position: "relative" as const,
+                        }
+                      : {}),
+                  }}
+                  onTouchStart={(e) => handleTouchStart(item.id, e)}
+                  onMouseDown={(e) => handleMouseDown(item.id, e)}
                 >
                   {/* Quantity badge */}
-                  <div className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-amber-400 text-[9px] font-bold text-white">
+                  <div className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-amber-400 text-[9px] font-bold text-white shadow-sm">
                     {item.quantity}
                   </div>
 
-                  <div className="flex flex-col items-center gap-1.5">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-stone-100 text-stone-600 dark:bg-white/[0.06] dark:text-stone-300">
+                  <div className="flex flex-col items-center gap-1">
+                    <div className="text-3xl leading-none select-none">
                       {feeding === item.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <Loader2 className="h-7 w-7 animate-spin text-stone-400" />
                       ) : (
-                        getItemIcon(item.icon)
+                        emoji
                       )}
                     </div>
-                    <span className="text-[10px] font-medium text-stone-700 dark:text-stone-300 text-center leading-tight">
+                    <span className="text-[10px] font-medium text-stone-400 dark:text-stone-400 text-center leading-tight">
                       {item.name}
                     </span>
                     {item.effect?.energy && (
-                      <span className="text-[8px] text-emerald-600 dark:text-emerald-400">
+                      <span className="text-[9px] font-semibold text-emerald-500 dark:text-emerald-400">
                         +{item.effect.energy}%
                       </span>
                     )}
@@ -196,10 +289,10 @@ export function CompanionInventory({ onFed }: CompanionInventoryProps) {
       <AnimatePresence>
         {feedResult && (
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            className="mt-3 rounded-xl bg-emerald-500/90 px-3 py-2 text-xs font-medium text-white text-center"
+            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+            className="mt-3 rounded-2xl bg-emerald-500/90 px-4 py-2.5 text-xs font-medium text-white text-center shadow-lg"
           >
             {feedResult}
           </motion.div>
