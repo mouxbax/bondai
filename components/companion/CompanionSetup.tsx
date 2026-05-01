@@ -196,8 +196,9 @@ export function CompanionSetup() {
           </button>
         </section>
 
-        {/* Inventory / Treats */}
+        {/* Inventory — Fridge + Closet */}
         <CompanionInventory
+          energy={energy}
           onFed={(result) => {
             // Trigger orb reaction — happy mood + purr
             const newMood = (result.moodBoost as OrbMood) || "happy";

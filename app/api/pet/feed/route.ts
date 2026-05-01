@@ -56,6 +56,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
+  // Block feeding if companion is already full
+  const currentEnergy = calculateCurrentEnergy(user.energy, user.lastEnergyUpdate, now);
+  if (currentEnergy >= MAX_ENERGY) {
+    return NextResponse.json(
+      { error: "full", message: "I'm full! Let's play instead!" },
+      { status: 400 },
+    );
+  }
+
   await prisma.$transaction(async (tx) => {
     // Decrement inventory
     await tx.petInventory.update({
@@ -65,7 +74,6 @@ export async function POST(req: Request) {
 
     // Apply energy boost if any
     if (energyBoost > 0) {
-      const currentEnergy = calculateCurrentEnergy(user.energy, user.lastEnergyUpdate, now);
       await tx.user.update({
         where: { id: session.user.id },
         data: {

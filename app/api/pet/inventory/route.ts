@@ -5,8 +5,8 @@ import { prisma } from "@/lib/db/prisma";
 export const dynamic = "force-dynamic";
 
 /**
- * GET /api/pet/inventory — returns the user's owned items with details.
- * Only items with quantity > 0 (consumables) or non-consumable owned items.
+ * GET /api/pet/inventory — returns ALL of the user's owned items.
+ * Includes consumed items (qty=0) so they stay visible in the fridge/closet.
  */
 export async function GET() {
   const session = await auth();
@@ -15,7 +15,7 @@ export async function GET() {
   }
 
   const inventory = await prisma.petInventory.findMany({
-    where: { userId: session.user.id, quantity: { gt: 0 } },
+    where: { userId: session.user.id },
     include: {
       item: {
         select: {
