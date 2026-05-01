@@ -32,7 +32,7 @@ export function ProfileCard({ username, streak = 0, equippedItems = [] }: Profil
   const { energy } = useEnergy();
 
   const xp = getXPState();
-  const evo = getEvolutionInfo(xp);
+  const evo = getEvolutionInfo();
   const config = getCompanionConfig();
   const companionName = config.name || "AIAH";
   const displayName = username || "AIAH User";

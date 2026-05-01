@@ -11,7 +11,8 @@
 
 export const MAX_ENERGY = 100;
 export const PASSIVE_RECHARGE_PER_MIN = 1;
-export const PLAN_GENERATION_COST = 50;
+export const PLAN_GENERATION_COST = 50; // legacy — now we drop to PLAN_ENERGY_FLOOR
+export const PLAN_ENERGY_FLOOR = 13;   // energy drops to this after generating a plan
 export const PRACTICE_COST = 10;
 export const BREATHING_RECHARGE = 15;
 export const PLAN_COOLDOWN_DAYS = 7;

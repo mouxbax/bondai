@@ -7,6 +7,7 @@ import Link from "next/link";
 import { sfx } from "@/lib/sfx";
 import { haptic } from "@/lib/haptics";
 import { getItemEmoji, RARITY_GLOW } from "@/lib/shop/emoji-map";
+import { addEvoXP } from "@/lib/evolution";
 
 interface InventoryItem {
   inventoryId: string;
@@ -19,12 +20,11 @@ interface InventoryItem {
   rarity: string;
   consumable: boolean;
   quantity: number;
-  effect: { energy?: number; moodBoost?: string; duration?: number } | null;
+  effect: { evoXp?: number; moodBoost?: string; duration?: number } | null;
 }
 
 interface CompanionInventoryProps {
-  energy?: number;
-  onFed?: (result: { item: string; energyRestored?: number; moodBoost?: string }) => void;
+  onFed?: (result: { item: string; evoXpGained?: number; moodBoost?: string }) => void;
 }
 
 function getEmoji(icon: string | null): string {
@@ -34,27 +34,24 @@ function getEmoji(icon: string | null): string {
 // ─── Treat card (draggable food/drink item) ─────────────────────────────
 function TreatCard({
   item,
-  isFull,
   feeding,
   dragItem,
   dragOffset,
   onTouchStart,
   onMouseDown,
-  onTap,
 }: {
   item: InventoryItem;
-  isFull: boolean;
   feeding: string | null;
   dragItem: string | null;
   dragOffset: { x: number; y: number };
   onTouchStart: (id: string, e: React.TouchEvent) => void;
   onMouseDown: (id: string, e: React.MouseEvent) => void;
-  onTap: () => void;
 }) {
   const isDragging = dragItem === item.id;
   const emoji = getEmoji(item.icon);
   const empty = item.quantity <= 0;
   const glow = RARITY_GLOW[item.rarity] ?? RARITY_GLOW.common;
+  const evoXp = item.effect?.evoXp;
 
   return (
     <motion.div
@@ -77,10 +74,6 @@ function TreatCard({
       }}
       onTouchStart={(e) => !empty && onTouchStart(item.id, e)}
       onMouseDown={(e) => !empty && onMouseDown(item.id, e)}
-      onClick={() => {
-        if (empty) return;
-        if (isFull) onTap();
-      }}
     >
       {/* Quantity badge */}
       {item.quantity > 0 && (
@@ -100,9 +93,9 @@ function TreatCard({
         <span className="text-[9px] font-medium text-stone-400 text-center leading-tight truncate w-full">
           {item.name}
         </span>
-        {item.effect?.energy && item.quantity > 0 && (
-          <span className="text-[8px] font-semibold text-emerald-500">
-            +{item.effect.energy}%
+        {evoXp && item.quantity > 0 && (
+          <span className="text-[8px] font-semibold text-violet-500">
+            +{evoXp} EvoXP
           </span>
         )}
       </div>
@@ -136,15 +129,13 @@ function ClosetCard({ item }: { item: InventoryItem }) {
 }
 
 // ─── Main component ────────────────────────────────────────────────────
-export function CompanionInventory({ energy = 100, onFed }: CompanionInventoryProps) {
+export function CompanionInventory({ onFed }: CompanionInventoryProps) {
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [feeding, setFeeding] = useState<string | null>(null);
   const [feedResult, setFeedResult] = useState<string | null>(null);
   const [dragItem, setDragItem] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-
-  const isFull = energy >= 100;
 
   const fetchInventory = useCallback(async () => {
     try {
@@ -162,16 +153,6 @@ export function CompanionInventory({ energy = 100, onFed }: CompanionInventoryPr
   }, [fetchInventory]);
 
   const feedItem = useCallback(async (itemId: string) => {
-    if (isFull) {
-      sfx.shy();
-      haptic("pop");
-      setFeedResult("😊 I'm full! Let's play instead!");
-      setTimeout(() => setFeedResult(null), 2500);
-      setDragItem(null);
-      setDragOffset({ x: 0, y: 0 });
-      return;
-    }
-
     setFeeding(itemId);
     try {
       const res = await fetch("/api/pet/feed", {
@@ -184,14 +165,13 @@ export function CompanionInventory({ energy = 100, onFed }: CompanionInventoryPr
         sfx.purr();
         haptic("success");
         const emoji = getEmoji(data.icon);
-        setFeedResult(`${emoji} Yum! ${data.item}${data.energyRestored ? ` +${data.energyRestored}%` : ""}`);
+        // Add EvoXP locally too (for instant UI feedback)
+        if (data.evoXpGained) {
+          addEvoXP(data.evoXpGained);
+        }
+        setFeedResult(`${emoji} Yum! ${data.item}${data.evoXpGained ? ` +${data.evoXpGained} EvoXP` : ""}`);
         onFed?.(data);
         fetchInventory();
-        setTimeout(() => setFeedResult(null), 2500);
-      } else if (data.error === "full") {
-        sfx.shy();
-        haptic("pop");
-        setFeedResult("😊 I'm full! Let's play instead!");
         setTimeout(() => setFeedResult(null), 2500);
       }
     } finally {
@@ -199,11 +179,10 @@ export function CompanionInventory({ energy = 100, onFed }: CompanionInventoryPr
       setDragItem(null);
       setDragOffset({ x: 0, y: 0 });
     }
-  }, [isFull, fetchInventory, onFed]);
+  }, [fetchInventory, onFed]);
 
   // Touch drag
   const handleTouchStart = useCallback((itemId: string, e: React.TouchEvent) => {
-    if (isFull) return;
     e.stopPropagation();
     const t = e.touches[0];
     setDragItem(itemId);
@@ -230,11 +209,10 @@ export function CompanionInventory({ energy = 100, onFed }: CompanionInventoryPr
     };
     document.addEventListener("touchmove", onMove, { passive: false });
     document.addEventListener("touchend", onEnd);
-  }, [isFull, feedItem]);
+  }, [feedItem]);
 
   // Mouse drag
   const handleMouseDown = useCallback((itemId: string, e: React.MouseEvent) => {
-    if (isFull) return;
     e.preventDefault();
     setDragItem(itemId);
     setDragOffset({ x: 0, y: 0 });
@@ -257,17 +235,7 @@ export function CompanionInventory({ energy = 100, onFed }: CompanionInventoryPr
     };
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup", onUp);
-  }, [isFull, feedItem]);
-
-  // Tap to feed (shows full message if full)
-  const handleTap = useCallback(() => {
-    if (isFull) {
-      sfx.shy();
-      haptic("pop");
-      setFeedResult("😊 I'm full! Let's play instead!");
-      setTimeout(() => setFeedResult(null), 2500);
-    }
-  }, [isFull]);
+  }, [feedItem]);
 
   // Split items
   const fridgeItems = items.filter((i) => i.consumable); // food + drinks
@@ -351,28 +319,19 @@ export function CompanionInventory({ energy = 100, onFed }: CompanionInventoryPr
               Get more
             </Link>
           </div>
-          {!isFull && (
-            <p className="text-[10px] text-stone-500 dark:text-stone-500 mb-2 text-center">
-              Drag a treat up to feed your companion
-            </p>
-          )}
-          {isFull && (
-            <p className="text-[10px] text-emerald-500 dark:text-emerald-400 mb-2 text-center font-medium">
-              😊 Your companion is full and happy!
-            </p>
-          )}
+          <p className="text-[10px] text-stone-500 dark:text-stone-500 mb-2 text-center">
+            Drag a treat up to feed and evolve your companion
+          </p>
           <div className="flex gap-2 flex-wrap justify-center">
             {fridgeItems.map((item) => (
               <TreatCard
                 key={item.id}
                 item={item}
-                isFull={isFull}
                 feeding={feeding}
                 dragItem={dragItem}
                 dragOffset={dragOffset}
                 onTouchStart={handleTouchStart}
                 onMouseDown={handleMouseDown}
-                onTap={handleTap}
               />
             ))}
           </div>

@@ -7,7 +7,7 @@ import type { Prisma } from "@prisma/client";
 import {
   calculateCurrentEnergy,
   checkPlanCooldown,
-  PLAN_GENERATION_COST,
+  PLAN_ENERGY_FLOOR,
 } from "@/lib/energy";
 
 export const runtime = "nodejs";
@@ -50,14 +50,14 @@ export async function POST() {
     );
   }
 
-  // Check energy
+  // Check energy — need more than the floor to generate
   const now = new Date();
   const currentEnergy = calculateCurrentEnergy(user.energy, user.lastEnergyUpdate, now);
-  if (currentEnergy < PLAN_GENERATION_COST) {
+  if (currentEnergy <= PLAN_ENERGY_FLOOR) {
     return NextResponse.json(
       {
-        error: `Not enough energy. You need ${PLAN_GENERATION_COST}%, but you have ${currentEnergy}%.`,
-        required: PLAN_GENERATION_COST,
+        error: `Not enough energy. You need more than ${PLAN_ENERGY_FLOOR}%, but you have ${currentEnergy}%. Wait for it to recharge.`,
+        required: PLAN_ENERGY_FLOOR + 1,
         current: currentEnergy,
       },
       { status: 400 },
@@ -102,7 +102,7 @@ export async function POST() {
     prisma.user.update({
       where: { id: session.user.id },
       data: {
-        energy: currentEnergy - PLAN_GENERATION_COST,
+        energy: PLAN_ENERGY_FLOOR,
         lastEnergyUpdate: now,
         lastPlanGeneratedAt: now,
       },
@@ -113,6 +113,6 @@ export async function POST() {
     plan: saved.data,
     weekStart: saved.weekStart,
     createdAt: saved.createdAt,
-    energy: currentEnergy - PLAN_GENERATION_COST,
+    energy: PLAN_ENERGY_FLOOR,
   });
 }

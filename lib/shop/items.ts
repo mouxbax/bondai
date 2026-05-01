@@ -13,7 +13,7 @@ export interface ShopItemDef {
   rarity: "common" | "rare" | "legendary";
   consumable: boolean;
   effect?: {
-    energy?: number;       // energy boost when consumed
+    evoXp?: number;        // evolution XP when fed to companion
     moodBoost?: string;    // temporary mood override
     duration?: number;     // effect duration in ms
   };
@@ -24,85 +24,85 @@ export interface ShopItemDef {
 }
 
 export const SHOP_ITEMS: ShopItemDef[] = [
-  // ─── Food (consumable, restores energy) ──────────────────────────
+  // ─── Food (consumable, gives EvoXP to help companion evolve) ────
   {
     slug: "food-apple",
     name: "Fresh Apple",
-    description: "A crisp apple. Restores 5% energy.",
+    description: "A crisp apple. +5 EvoXP toward evolution.",
     category: "FOOD",
     price: 10,
     icon: "apple",
     rarity: "common",
     consumable: true,
-    effect: { energy: 5 },
+    effect: { evoXp: 5 },
   },
   {
     slug: "food-pizza",
     name: "Slice of Pizza",
-    description: "Comfort food. Restores 10% energy and makes AIAH happy.",
+    description: "Comfort food. +5 EvoXP and makes your companion happy.",
     category: "FOOD",
     price: 25,
     icon: "pizza",
     rarity: "common",
     consumable: true,
-    effect: { energy: 10, moodBoost: "happy", duration: 30000 },
+    effect: { evoXp: 5, moodBoost: "happy", duration: 30000 },
   },
   {
     slug: "food-sushi",
     name: "Premium Sushi",
-    description: "Deluxe platter. Restores 20% energy.",
+    description: "Deluxe platter. +15 EvoXP — rare quality food!",
     category: "FOOD",
     price: 50,
     icon: "sushi",
     rarity: "rare",
     consumable: true,
-    effect: { energy: 20, moodBoost: "energetic", duration: 60000 },
+    effect: { evoXp: 15, moodBoost: "energetic", duration: 60000 },
   },
   {
     slug: "food-cake",
     name: "Birthday Cake",
-    description: "A whole cake! Restores 35% energy and a party mood.",
+    description: "A whole cake! +40 EvoXP — legendary feast!",
     category: "FOOD",
     price: 100,
     icon: "cake",
     rarity: "legendary",
     consumable: true,
-    effect: { energy: 35, moodBoost: "happy", duration: 120000 },
+    effect: { evoXp: 40, moodBoost: "happy", duration: 120000 },
   },
 
-  // ─── Drinks (consumable, energy + mood) ──────────────────────────
+  // ─── Drinks (consumable, EvoXP + mood) ──────────────────────────
   {
     slug: "drink-water",
     name: "Glass of Water",
-    description: "Hydration is key. Restores 3% energy.",
+    description: "Hydration is key. +5 EvoXP.",
     category: "DRINK",
     price: 5,
     icon: "droplets",
     rarity: "common",
     consumable: true,
-    effect: { energy: 3 },
+    effect: { evoXp: 5 },
   },
   {
     slug: "drink-tea",
     name: "Calming Tea",
-    description: "A warm cup of chamomile. Calms the orb.",
+    description: "A warm cup of chamomile. +5 EvoXP, calms your companion.",
     category: "DRINK",
     price: 15,
     icon: "coffee",
     rarity: "common",
     consumable: true,
-    effect: { energy: 5, moodBoost: "calm", duration: 45000 },
+    effect: { evoXp: 5, moodBoost: "calm", duration: 45000 },
   },
   {
     slug: "drink-energy",
-    name: "Energy Drink",
-    description: "Instant boost! +15% energy, goes hyper.",
+    name: "Power Elixir",
+    description: "Potent brew! +15 EvoXP, goes hyper.",
     category: "DRINK",
     price: 40,
     icon: "zap",
     rarity: "rare",
     consumable: true,
-    effect: { energy: 15, moodBoost: "energetic", duration: 30000 },
+    effect: { evoXp: 15, moodBoost: "energetic", duration: 30000 },
   },
 
   // ─── Accessories (equippable, permanent) ─────────────────────────
@@ -199,19 +199,6 @@ export const SHOP_ITEMS: ShopItemDef[] = [
     icon: "flame",
     rarity: "rare",
     consumable: false,
-  },
-
-  // ─── Evolution items (required to evolve) ────────────────────────
-  {
-    slug: "evo-crystal",
-    name: "Evolution Crystal",
-    description: "Required to evolve your companion to the next stage.",
-    category: "ACCESSORY",
-    price: 200,
-    icon: "gem",
-    rarity: "legendary",
-    consumable: true,
-    effect: { moodBoost: "happy", duration: 60000 },
   },
 
   // ─── Orb skins (cosmetic auras) ─────────────────────────────────
@@ -335,13 +322,13 @@ export const SHOP_ITEMS: ShopItemDef[] = [
   {
     slug: "summer-coconut",
     name: "Coconut Drink",
-    description: "Refreshing! +10 energy. Summer only.",
+    description: "Refreshing! +15 EvoXP. Summer only.",
     category: "DRINK",
     price: 20,
     icon: "coconut",
     rarity: "rare",
     consumable: true,
-    effect: { energy: 10, moodBoost: "happy", duration: 30000 },
+    effect: { evoXp: 15, moodBoost: "happy", duration: 30000 },
     seasonal: true,
     seasonTag: "summer-2026",
     availableFrom: "2026-06-01",
@@ -350,13 +337,13 @@ export const SHOP_ITEMS: ShopItemDef[] = [
   {
     slug: "summer-icecream",
     name: "Rainbow Ice Cream",
-    description: "Brain freeze! +15 energy. Summer exclusive.",
+    description: "Brain freeze! +15 EvoXP. Summer exclusive.",
     category: "FOOD",
     price: 35,
     icon: "icecream",
     rarity: "rare",
     consumable: true,
-    effect: { energy: 15, moodBoost: "energetic", duration: 45000 },
+    effect: { evoXp: 15, moodBoost: "energetic", duration: 45000 },
     seasonal: true,
     seasonTag: "summer-2026",
     availableFrom: "2026-06-01",

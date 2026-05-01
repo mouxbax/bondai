@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { useEffect } from "react";
 import { sfx } from "@/lib/sfx";
 import { haptic } from "@/lib/haptics";
-import { getStageDefinitions, type EvolutionStage } from "@/lib/evolution";
+import { STAGES, type EvolutionStage } from "@/lib/evolution";
 
 interface EvolutionCelebrationProps {
   stage: EvolutionStage;
@@ -16,8 +16,7 @@ interface EvolutionCelebrationProps {
  * Auto-dismisses after 4 seconds.
  */
 export function EvolutionCelebration({ stage, onComplete }: EvolutionCelebrationProps) {
-  const stages = getStageDefinitions();
-  const info = stages.find((s) => s.stage === stage);
+  const info = STAGES.find((s) => s.stage === stage);
 
   useEffect(() => {
     sfx.fanfare();

@@ -112,15 +112,31 @@ export function CompanionSetup() {
               </button>
             )}
 
-            {/* Evolution badge */}
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
-                {evo.emoji} {evo.label}
-              </span>
-              {evo.nextStageLevel && (
-                <span className={`text-[9px] ${theme.textMuted}`}>
-                  Lv.{evo.nextStageLevel}
+            {/* Evolution badge + progress */}
+            <div className="flex flex-col items-center gap-1.5 w-full max-w-[200px]">
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-2.5 py-0.5 text-[10px] font-medium text-violet-700 dark:bg-violet-900/30 dark:text-violet-400">
+                  {evo.emoji} {evo.label}
                 </span>
+                <span className={`text-[9px] ${theme.textMuted}`}>
+                  {evo.evoXp} EvoXP
+                </span>
+              </div>
+              {/* Evolution progress bar */}
+              {evo.nextStageEvoXp && (
+                <div className="w-full">
+                  <div className="h-1.5 rounded-full bg-stone-200/60 dark:bg-white/[0.06] overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-violet-500 to-purple-500 transition-all duration-500"
+                      style={{ width: `${Math.min(100, evo.progress * 100)}%` }}
+                    />
+                  </div>
+                  {evo.blockReason && (
+                    <p className={`text-[8px] mt-0.5 text-center ${theme.textMuted}`}>
+                      {evo.blockReason}
+                    </p>
+                  )}
+                </div>
               )}
             </div>
 
@@ -135,7 +151,6 @@ export function CompanionSetup() {
           {/* Right column: Fridge + Closet + Gifts */}
           <div className="flex-1 min-w-0 w-full">
             <CompanionInventory
-              energy={energy}
               onFed={(result) => {
                 const newMood = (result.moodBoost as OrbMood) || "happy";
                 setMood(newMood);

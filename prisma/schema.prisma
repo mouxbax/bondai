@@ -107,6 +107,7 @@ model User {
   xp                  Int       @default(0)       // total XP earned
   level               Int       @default(1)       // current level
   companionName       String    @default("Orb")   // pet name for leaderboard display
+  evoXp               Int       @default(0)       // evolution XP from feeding
 
   lifeOsProfile      LifeOsProfile?
   weeklyPlans        WeeklyPlan[]

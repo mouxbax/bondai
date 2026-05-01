@@ -26,7 +26,7 @@ interface ShopItem {
   icon: string | null;
   rarity: string;
   consumable: boolean;
-  effect: { energy?: number; moodBoost?: string; duration?: number } | null;
+  effect: { evoXp?: number; moodBoost?: string; duration?: number } | null;
   owned: number;
   equipped: boolean;
 }
@@ -95,7 +95,7 @@ export default function ShopPage() {
       if (!res.ok) {
         setToast(data.error ?? "Purchase failed");
       } else {
-        setToast(`Bought ${data.item}!${data.energyRestored ? ` +${data.energyRestored}% energy` : ""}`);
+        setToast(`Bought ${data.item}!`);
         fetchShop();
       }
     } finally {
@@ -232,9 +232,9 @@ export default function ShopPage() {
                       {/* Effect tags */}
                       {item.effect && (
                         <div className="flex flex-wrap gap-1.5 mb-3">
-                          {item.effect.energy && (
-                            <span className="text-[10px] bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 rounded-full px-2 py-0.5">
-                              +{item.effect.energy}% energy
+                          {item.effect.evoXp && (
+                            <span className="text-[10px] bg-violet-50 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300 rounded-full px-2 py-0.5">
+                              +{item.effect.evoXp} EvoXP
                             </span>
                           )}
                           {item.effect.moodBoost && (

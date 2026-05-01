@@ -1,59 +1,205 @@
 "use client";
 
-import { getXPState, type XPState } from "./gamification";
-
 /**
- * Companion evolution system.
- * Stages are tied to XP level — no separate progression.
- * Each stage changes the orb's visual identity.
+ * Companion Evolution System — Pokemon/Digimon-style progression.
+ *
+ * 7 stages gated by BOTH time (account age) AND EvoXP (from feeding).
+ * Users must feed consistently over months to evolve.
+ * You can't skip stages by buying tons of food — time gates force dedication.
+ *
+ * EvoXP comes ONLY from feeding. Energy is separate (plan generation only).
  */
 
-export type EvolutionStage = "egg" | "hatchling" | "young" | "adult" | "ascended";
+export type EvolutionStage =
+  | "egg"
+  | "blob"
+  | "sprout"
+  | "cub"
+  | "striker"
+  | "guardian"
+  | "ascended";
 
-export interface EvolutionInfo {
-  stage: EvolutionStage;
-  stageIndex: number; // 0-4
-  label: string;
-  description: string;
-  emoji: string;
-  /** Level required to reach this stage */
-  minLevel: number;
-  /** Level required for the NEXT stage (null if max) */
-  nextStageLevel: number | null;
-  /** 0..1 progress toward next evolution */
-  progress: number;
-}
-
-interface StageDefinition {
+export interface StageDefinition {
   stage: EvolutionStage;
   label: string;
   description: string;
   emoji: string;
-  minLevel: number;
+  /** Minimum EvoXP required to reach this stage */
+  minEvoXp: number;
+  /** Minimum account age in days to reach this stage */
+  minDays: number;
 }
 
-const STAGES: StageDefinition[] = [
-  { stage: "egg",       label: "Egg",       description: "Something stirs within...",              emoji: "🥚", minLevel: 0 },
-  { stage: "hatchling", label: "Hatchling", description: "A tiny companion has emerged!",          emoji: "🐣", minLevel: 2 },
-  { stage: "young",     label: "Young",     description: "Growing curious and playful.",           emoji: "🌱", minLevel: 5 },
-  { stage: "adult",     label: "Adult",     description: "A loyal, wise companion by your side.",  emoji: "🌟", minLevel: 10 },
-  { stage: "ascended",  label: "Ascended",  description: "Radiant. Transcendent. One with you.",   emoji: "✨", minLevel: 20 },
+export const STAGES: StageDefinition[] = [
+  {
+    stage: "egg",
+    label: "Egg",
+    description: "Something stirs within... Feed to awaken it.",
+    emoji: "🥚",
+    minEvoXp: 0,
+    minDays: 0,
+  },
+  {
+    stage: "blob",
+    label: "Blob",
+    description: "A tiny amorphous companion! It knows your name.",
+    emoji: "🫧",
+    minEvoXp: 50,     // ~10 feeds
+    minDays: 3,
+  },
+  {
+    stage: "sprout",
+    label: "Sprout",
+    description: "Growing limbs! Stubby arms wave at you.",
+    emoji: "🌱",
+    minEvoXp: 300,    // ~60 feeds
+    minDays: 30,
+  },
+  {
+    stage: "cub",
+    label: "Cub",
+    description: "A proper creature with hands and feet. Follows you around.",
+    emoji: "🐾",
+    minEvoXp: 1000,   // ~200 feeds
+    minDays: 90,
+  },
+  {
+    stage: "striker",
+    label: "Striker",
+    description: "Wings are growing! Can fly across the screen.",
+    emoji: "🐉",
+    minEvoXp: 2500,   // ~500 feeds
+    minDays: 180,
+  },
+  {
+    stage: "guardian",
+    label: "Guardian",
+    description: "A powerful protector. Aura radiates around it.",
+    emoji: "🛡️",
+    minEvoXp: 5000,   // ~1000 feeds
+    minDays: 365,
+  },
+  {
+    stage: "ascended",
+    label: "Ascended",
+    description: "Mythical. Transcendent. One with the universe.",
+    emoji: "✨",
+    minEvoXp: 10000,  // ~2000 feeds
+    minDays: 540,
+  },
 ];
 
-const KEY_HATCHED = "aiah-egg-hatched";
+// ─── EvoXP values per food rarity ─────────────────────────────────────
+export const EVO_XP_BY_RARITY: Record<string, number> = {
+  common: 5,
+  rare: 15,
+  legendary: 40,
+};
+
+// ─── LocalStorage keys ────────────────────────────────────────────────
+const KEY_EVO_XP = "aiah-evo-xp";
 const KEY_LAST_STAGE = "aiah-evolution-stage";
+const KEY_HATCHED = "aiah-egg-hatched";
+const KEY_ACCOUNT_CREATED = "aiah-account-created";
+
+// ─── Helpers ──────────────────────────────────────────────────────────
+
+function read<T>(k: string, fallback: T): T {
+  if (typeof window === "undefined") return fallback;
+  try {
+    const s = localStorage.getItem(k);
+    return s ? (JSON.parse(s) as T) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function write<T>(k: string, v: T) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(k, JSON.stringify(v));
+  } catch { /* ignore */ }
+}
+
+// ─── EvoXP ────────────────────────────────────────────────────────────
+
+export function getEvoXP(): number {
+  return read<number>(KEY_EVO_XP, 0);
+}
+
+export function addEvoXP(amount: number): number {
+  const current = getEvoXP();
+  const next = current + amount;
+  write(KEY_EVO_XP, next);
+
+  // Sync to server
+  syncEvoXPToServer(next);
+
+  return next;
+}
+
+/** Fire-and-forget sync to server DB */
+function syncEvoXPToServer(evoXp: number) {
+  if (typeof window === "undefined") return;
+  fetch("/api/pet/evo-xp", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ evoXp }),
+  }).catch(() => { /* silent fail */ });
+}
+
+// ─── Account age ──────────────────────────────────────────────────────
+
+export function getAccountAgeDays(): number {
+  const created = read<string>(KEY_ACCOUNT_CREATED, "");
+  if (!created) {
+    // First time — set account creation date
+    const now = new Date().toISOString();
+    write(KEY_ACCOUNT_CREATED, now);
+    return 0;
+  }
+  const ms = Date.now() - new Date(created).getTime();
+  return Math.floor(ms / (24 * 60 * 60 * 1000));
+}
+
+export function setAccountCreatedDate(date: string) {
+  write(KEY_ACCOUNT_CREATED, date);
+}
+
+// ─── Stage definitions ────────────────────────────────────────────────
 
 export function getStageDefinitions(): StageDefinition[] {
   return STAGES;
 }
 
-export function getEvolutionInfo(xpState?: XPState): EvolutionInfo {
-  const state = xpState ?? getXPState();
-  const level = state.level;
+// ─── Evolution info ───────────────────────────────────────────────────
 
+export interface EvolutionInfo {
+  stage: EvolutionStage;
+  stageIndex: number;
+  label: string;
+  description: string;
+  emoji: string;
+  evoXp: number;
+  accountDays: number;
+  /** EvoXP needed for next stage (null if max) */
+  nextStageEvoXp: number | null;
+  /** Days needed for next stage (null if max) */
+  nextStageDays: number | null;
+  /** 0..1 progress toward next evolution (min of XP progress + time progress) */
+  progress: number;
+  /** What's blocking next evolution */
+  blockReason: string | null;
+}
+
+export function getEvolutionInfo(): EvolutionInfo {
+  const evoXp = getEvoXP();
+  const days = getAccountAgeDays();
+
+  // Find current stage (highest stage where both requirements met)
   let currentIdx = 0;
   for (let i = STAGES.length - 1; i >= 0; i--) {
-    if (level >= STAGES[i].minLevel) {
+    if (evoXp >= STAGES[i].minEvoXp && days >= STAGES[i].minDays) {
       currentIdx = i;
       break;
     }
@@ -62,12 +208,28 @@ export function getEvolutionInfo(xpState?: XPState): EvolutionInfo {
   const current = STAGES[currentIdx];
   const next = currentIdx < STAGES.length - 1 ? STAGES[currentIdx + 1] : null;
 
-  // Progress toward next evolution
   let progress = 1;
+  let blockReason: string | null = null;
+
   if (next) {
-    const levelsInStage = next.minLevel - current.minLevel;
-    const levelsCompleted = level - current.minLevel;
-    progress = Math.min(1, levelsCompleted / levelsInStage);
+    const xpProgress = next.minEvoXp > current.minEvoXp
+      ? Math.min(1, (evoXp - current.minEvoXp) / (next.minEvoXp - current.minEvoXp))
+      : 1;
+    const dayProgress = next.minDays > current.minDays
+      ? Math.min(1, (days - current.minDays) / (next.minDays - current.minDays))
+      : 1;
+
+    // Progress is the MINIMUM — both gates must be met
+    progress = Math.min(xpProgress, dayProgress);
+
+    // Determine what's blocking
+    if (xpProgress < 1 && dayProgress < 1) {
+      blockReason = `Need ${next.minEvoXp - evoXp} more EvoXP and ${next.minDays - days} more days`;
+    } else if (xpProgress < 1) {
+      blockReason = `Need ${next.minEvoXp - evoXp} more EvoXP (keep feeding!)`;
+    } else if (dayProgress < 1) {
+      blockReason = `${next.minDays - days} days until evolution unlocks`;
+    }
   }
 
   return {
@@ -76,145 +238,81 @@ export function getEvolutionInfo(xpState?: XPState): EvolutionInfo {
     label: current.label,
     description: current.description,
     emoji: current.emoji,
-    minLevel: current.minLevel,
-    nextStageLevel: next?.minLevel ?? null,
+    evoXp,
+    accountDays: days,
+    nextStageEvoXp: next?.minEvoXp ?? null,
+    nextStageDays: next?.minDays ?? null,
     progress,
+    blockReason,
   };
 }
 
-/** Check if egg has been "hatched" (first interaction done) */
+// ─── Egg hatching ─────────────────────────────────────────────────────
+
 export function isEggHatched(): boolean {
   if (typeof window === "undefined") return true;
   return localStorage.getItem(KEY_HATCHED) === "true";
 }
 
-/** Mark egg as hatched */
 export function markEggHatched(): void {
   if (typeof window === "undefined") return;
   localStorage.setItem(KEY_HATCHED, "true");
 }
 
-/** Get the last seen evolution stage (for detecting evolution events) */
+// ─── Stage tracking (for detecting evolution events) ──────────────────
+
 export function getLastSeenStage(): EvolutionStage {
   if (typeof window === "undefined") return "egg";
   return (localStorage.getItem(KEY_LAST_STAGE) as EvolutionStage) || "egg";
 }
 
-/** Update the last seen stage */
 export function setLastSeenStage(stage: EvolutionStage): void {
   if (typeof window === "undefined") return;
   localStorage.setItem(KEY_LAST_STAGE, stage);
 }
 
-const KEY_CRYSTALS_USED = "aiah-evo-crystals-used";
-
-/** Get the number of evolution crystals consumed so far */
-export function getCrystalsUsed(): number {
-  if (typeof window === "undefined") return 0;
-  return parseInt(localStorage.getItem(KEY_CRYSTALS_USED) || "0", 10);
-}
-
-/** Record consuming an evolution crystal */
-export function consumeEvolutionCrystal(): void {
-  if (typeof window === "undefined") return;
-  const used = getCrystalsUsed() + 1;
-  localStorage.setItem(KEY_CRYSTALS_USED, String(used));
-}
-
-/**
- * Check if user can evolve to the next stage.
- * Evolution requires:
- * 1. Sufficient XP level
- * 2. An evolution crystal consumed for each stage transition (except egg -> hatchling)
- *
- * Returns:
- * - { canEvolve: true, nextStage } if ready to evolve
- * - { canEvolve: false, reason } if blocked
- * - null if already at max stage
- */
-export function getEvolutionGateStatus(): {
-  canEvolve: boolean;
-  needsCrystal: boolean;
-  nextStage: EvolutionStage | null;
-  reason?: string;
-} {
-  const info = getEvolutionInfo();
-  if (info.nextStageLevel === null) {
-    return { canEvolve: false, needsCrystal: false, nextStage: null, reason: "Max stage reached" };
-  }
-
-  const state = getXPState();
-  const nextStageIdx = info.stageIndex + 1;
-  const nextStageDef = STAGES[nextStageIdx];
-
-  if (state.level < nextStageDef.minLevel) {
-    return {
-      canEvolve: false,
-      needsCrystal: false,
-      nextStage: nextStageDef.stage,
-      reason: `Need Level ${nextStageDef.minLevel}`,
-    };
-  }
-
-  // First evolution (egg -> hatchling) is free
-  if (info.stageIndex === 0) {
-    return { canEvolve: true, needsCrystal: false, nextStage: nextStageDef.stage };
-  }
-
-  // Subsequent evolutions require a crystal
-  const crystalsUsed = getCrystalsUsed();
-  // Need (stageIndex) crystals total to reach current stage + 1 more for next
-  const crystalsNeeded = info.stageIndex; // 1 for hatchling->young, 2 for young->adult, etc.
-  if (crystalsUsed < crystalsNeeded) {
-    return {
-      canEvolve: false,
-      needsCrystal: true,
-      nextStage: nextStageDef.stage,
-      reason: "Need an Evolution Crystal",
-    };
-  }
-
-  return { canEvolve: true, needsCrystal: false, nextStage: nextStageDef.stage };
-}
-
 /**
  * Check if an evolution just happened (stage is higher than last seen).
  * Returns the new stage if evolved, null otherwise.
- * Automatically updates lastSeenStage.
  */
 export function checkEvolution(): EvolutionStage | null {
   const info = getEvolutionInfo();
   const lastSeen = getLastSeenStage();
   const lastIdx = STAGES.findIndex((s) => s.stage === lastSeen);
-  const currentIdx = STAGES.findIndex((s) => s.stage === info.stage);
+  const currentIdx = info.stageIndex;
 
-  // Check evolution gate before allowing evolution
-  const gate = getEvolutionGateStatus();
-  if (currentIdx > lastIdx && gate.canEvolve) {
+  if (currentIdx > lastIdx) {
     setLastSeenStage(info.stage);
     return info.stage;
   }
   return null;
 }
 
-/** Visual multipliers per stage — used by the orb to scale its appearance */
+// ─── Visual parameters per stage ──────────────────────────────────────
+
 export function getStageVisuals(stage: EvolutionStage): {
   glowIntensity: number;
   breathSpeed: number;
   particleCount: number;
   auraOpacity: number;
   faceScale: number;
+  orbScale: number;
+  wingAnimation: boolean;
 } {
   switch (stage) {
     case "egg":
-      return { glowIntensity: 0.3, breathSpeed: 0.5, particleCount: 0, auraOpacity: 0, faceScale: 0 };
-    case "hatchling":
-      return { glowIntensity: 0.6, breathSpeed: 0.8, particleCount: 2, auraOpacity: 0.1, faceScale: 0.85 };
-    case "young":
-      return { glowIntensity: 0.8, breathSpeed: 1.0, particleCount: 3, auraOpacity: 0.2, faceScale: 1.0 };
-    case "adult":
-      return { glowIntensity: 1.0, breathSpeed: 1.0, particleCount: 4, auraOpacity: 0.3, faceScale: 1.0 };
+      return { glowIntensity: 0.3, breathSpeed: 0.5, particleCount: 0, auraOpacity: 0, faceScale: 0, orbScale: 0.7, wingAnimation: false };
+    case "blob":
+      return { glowIntensity: 0.5, breathSpeed: 0.7, particleCount: 1, auraOpacity: 0.05, faceScale: 0.8, orbScale: 0.8, wingAnimation: false };
+    case "sprout":
+      return { glowIntensity: 0.7, breathSpeed: 0.9, particleCount: 2, auraOpacity: 0.12, faceScale: 0.9, orbScale: 0.9, wingAnimation: false };
+    case "cub":
+      return { glowIntensity: 0.85, breathSpeed: 1.0, particleCount: 3, auraOpacity: 0.2, faceScale: 1.0, orbScale: 1.0, wingAnimation: false };
+    case "striker":
+      return { glowIntensity: 1.0, breathSpeed: 1.1, particleCount: 4, auraOpacity: 0.3, faceScale: 1.0, orbScale: 1.05, wingAnimation: true };
+    case "guardian":
+      return { glowIntensity: 1.2, breathSpeed: 1.15, particleCount: 5, auraOpacity: 0.4, faceScale: 1.0, orbScale: 1.1, wingAnimation: true };
     case "ascended":
-      return { glowIntensity: 1.4, breathSpeed: 1.2, particleCount: 6, auraOpacity: 0.5, faceScale: 1.0 };
+      return { glowIntensity: 1.5, breathSpeed: 1.3, particleCount: 8, auraOpacity: 0.6, faceScale: 1.0, orbScale: 1.15, wingAnimation: true };
   }
 }

@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db/prisma";
-import { calculateCurrentEnergy, MAX_ENERGY } from "@/lib/energy";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +11,8 @@ const buySchema = z.object({
 
 /**
  * POST /api/shop/buy — purchase an item from the shop.
- * Body: { itemId: string }
+ * Deducts coins and adds item to inventory.
+ * Consumables go to inventory for later feeding (no instant energy/evoXP on buy).
  */
 export async function POST(req: Request) {
   const session = await auth();
@@ -28,12 +28,11 @@ export async function POST(req: Request) {
 
   const { itemId } = parsed.data;
 
-  // Get item and user in parallel
   const [item, user] = await Promise.all([
     prisma.shopItem.findUnique({ where: { id: itemId } }),
     prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { coins: true, energy: true, lastEnergyUpdate: true },
+      select: { coins: true },
     }),
   ]);
 
@@ -60,28 +59,11 @@ export async function POST(req: Request) {
     }
   }
 
-  // Transaction: deduct coins + add to inventory + apply consumable effect
-  const now = new Date();
-  const effect = item.effect as { energy?: number; moodBoost?: string; duration?: number } | null;
-  const energyBoost = item.consumable && effect?.energy ? effect.energy : 0;
-
   await prisma.$transaction(async (tx) => {
     // Deduct coins
     await tx.user.update({
       where: { id: session.user.id },
-      data: {
-        coins: { decrement: item.price },
-        // Apply energy boost for consumables
-        ...(energyBoost > 0
-          ? {
-              energy: Math.min(
-                MAX_ENERGY,
-                calculateCurrentEnergy(user.energy, user.lastEnergyUpdate, now) + energyBoost,
-              ),
-              lastEnergyUpdate: now,
-            }
-          : {}),
-      },
+      data: { coins: { decrement: item.price } },
     });
 
     // Add to inventory (upsert for consumables)
@@ -98,11 +80,12 @@ export async function POST(req: Request) {
     }
   });
 
+  const effect = item.effect as { evoXp?: number; moodBoost?: string; duration?: number } | null;
+
   return NextResponse.json({
     success: true,
     item: item.name,
     coinsRemaining: user.coins - item.price,
-    ...(effect?.moodBoost ? { moodBoost: effect.moodBoost, duration: effect.duration } : {}),
-    ...(energyBoost > 0 ? { energyRestored: energyBoost } : {}),
+    ...(effect?.moodBoost ? { moodBoost: effect.moodBoost } : {}),
   });
 }

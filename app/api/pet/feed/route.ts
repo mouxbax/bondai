@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db/prisma";
-import { calculateCurrentEnergy, MAX_ENERGY } from "@/lib/energy";
 import { calculateCurrentMood, improveMood } from "@/lib/companion-mood";
+import { EVO_XP_BY_RARITY } from "@/lib/evolution";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +13,8 @@ const feedSchema = z.object({
 
 /**
  * POST /api/pet/feed — use a consumable item from inventory on the companion.
- * Decrements quantity and applies the item's effect (energy, mood).
+ * Decrements quantity, gives EvoXP (for evolution), and improves mood.
+ * Feeding does NOT restore energy — energy is only for plan generation.
  */
 export async function POST(req: Request) {
   const session = await auth();
@@ -43,28 +44,23 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Item is not consumable" }, { status: 400 });
   }
 
-  const effect = inv.item.effect as { energy?: number; moodBoost?: string; duration?: number } | null;
-  const energyBoost = effect?.energy ?? 0;
+  const effect = inv.item.effect as { evoXp?: number; moodBoost?: string; duration?: number } | null;
   const now = new Date();
 
-  // Transaction: decrement quantity + apply energy boost
+  // Calculate EvoXP: use item effect if specified, otherwise use rarity default
+  const evoXpGain = effect?.evoXp ?? EVO_XP_BY_RARITY[inv.item.rarity] ?? 5;
+
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { energy: true, lastEnergyUpdate: true, companionMood: true, lastInteraction: true, moodDecayRate: true },
+    select: { companionMood: true, lastInteraction: true, moodDecayRate: true, evoXp: true },
   });
 
   if (!user) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
-  // Block feeding if companion is already full
-  const currentEnergy = calculateCurrentEnergy(user.energy, user.lastEnergyUpdate, now);
-  if (currentEnergy >= MAX_ENERGY) {
-    return NextResponse.json(
-      { error: "full", message: "I'm full! Let's play instead!" },
-      { status: 400 },
-    );
-  }
+  const currentMood = calculateCurrentMood(user.companionMood, user.lastInteraction, user.moodDecayRate, now);
+  const newMood = improveMood(currentMood);
 
   await prisma.$transaction(async (tx) => {
     // Decrement inventory
@@ -73,16 +69,11 @@ export async function POST(req: Request) {
       data: { quantity: { decrement: 1 } },
     });
 
-    // Apply energy boost + mood improvement
-    const currentMood = calculateCurrentMood(user.companionMood, user.lastInteraction, user.moodDecayRate, now);
-    const newMood = improveMood(currentMood);
-
+    // Add EvoXP + improve mood + record interaction
     await tx.user.update({
       where: { id: session.user.id },
       data: {
-        ...(energyBoost > 0
-          ? { energy: Math.min(MAX_ENERGY, currentEnergy + energyBoost), lastEnergyUpdate: now }
-          : {}),
+        evoXp: { increment: evoXpGain },
         companionMood: newMood,
         lastInteraction: now,
       },
@@ -93,7 +84,9 @@ export async function POST(req: Request) {
     success: true,
     item: inv.item.name,
     icon: inv.item.icon,
+    rarity: inv.item.rarity,
+    evoXpGained: evoXpGain,
+    newEvoXp: (user.evoXp ?? 0) + evoXpGain,
     ...(effect?.moodBoost ? { moodBoost: effect.moodBoost, duration: effect.duration } : {}),
-    ...(energyBoost > 0 ? { energyRestored: energyBoost } : {}),
   });
 }
