@@ -310,6 +310,10 @@ model ShopItem {
   rarity      String       @default("common") // common, rare, legendary
   effect      Json?                       // { energy?: number, moodBoost?: OrbMood, duration?: number }
   consumable  Boolean      @default(false)
+  seasonal    Boolean      @default(false) // true = limited-time drop
+  seasonTag   String?                     // e.g. "summer-2026", "halloween-2026"
+  availableFrom DateTime?                 // start of availability window
+  availableUntil DateTime?                // end of availability window (null = permanent)
   createdAt   DateTime     @default(now())
 
   inventory   PetInventory[]

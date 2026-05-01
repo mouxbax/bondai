@@ -40,12 +40,25 @@ export async function GET() {
     equippedMap[eq.slot] = eq.itemId;
   }
 
+  // Filter out seasonal items outside their availability window
+  const now = new Date();
+  const availableItems = items.filter((item) => {
+    if (!item.seasonal) return true;
+    if (item.availableFrom && now < new Date(item.availableFrom)) return false;
+    if (item.availableUntil && now > new Date(item.availableUntil)) return false;
+    return true;
+  });
+
   return NextResponse.json({
     coins: user?.coins ?? 0,
-    items: items.map((item) => ({
+    items: availableItems.map((item) => ({
       ...item,
       owned: ownedMap[item.id] ?? 0,
       equipped: Object.values(equippedMap).includes(item.id),
+      // Include countdown for seasonal items
+      ...(item.seasonal && item.availableUntil
+        ? { expiresAt: item.availableUntil.toISOString() }
+        : {}),
     })),
     equipped: equippedMap,
   });

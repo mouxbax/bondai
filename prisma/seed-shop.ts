@@ -18,6 +18,10 @@ async function main() {
         rarity: item.rarity,
         consumable: item.consumable,
         effect: item.effect ?? undefined,
+        seasonal: item.seasonal ?? false,
+        seasonTag: item.seasonTag ?? null,
+        availableFrom: item.availableFrom ? new Date(item.availableFrom) : null,
+        availableUntil: item.availableUntil ? new Date(item.availableUntil) : null,
       },
       create: {
         slug: item.slug,
@@ -29,6 +33,10 @@ async function main() {
         rarity: item.rarity,
         consumable: item.consumable,
         effect: item.effect ?? undefined,
+        seasonal: item.seasonal ?? false,
+        seasonTag: item.seasonTag ?? null,
+        availableFrom: item.availableFrom ? new Date(item.availableFrom) : null,
+        availableUntil: item.availableUntil ? new Date(item.availableUntil) : null,
       },
     });
     console.log(`  + ${item.name} (${item.category})`);

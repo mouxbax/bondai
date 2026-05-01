@@ -223,6 +223,17 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: "early_bird", name: "Early Bird", description: "Log before 7am", emoji: "🐦", category: "special" },
   { id: "night_owl", name: "Night Owl", description: "Log after 11pm", emoji: "🦉", category: "special" },
   { id: "full_spectrum", name: "Full Spectrum", description: "Log every mood type at least once", emoji: "🌈", category: "mood" },
+  // Companion achievements
+  { id: "fed_10", name: "Caretaker", description: "Feed your companion 10 times", emoji: "🍎", category: "special" },
+  { id: "fed_50", name: "Nurturing Soul", description: "Feed your companion 50 times", emoji: "🍕", category: "special" },
+  { id: "fed_100", name: "Master Chef", description: "Feed your companion 100 times", emoji: "👨‍🍳", category: "special" },
+  { id: "first_evo", name: "New Life", description: "Evolve your companion for the first time", emoji: "🐣", category: "special" },
+  { id: "full_evo", name: "Ascension", description: "Reach the Ascended evolution stage", emoji: "🌌", category: "special" },
+  { id: "collector_5", name: "Collector", description: "Own 5 different accessories", emoji: "🎒", category: "special" },
+  { id: "collector_all", name: "Completionist", description: "Own every non-seasonal item", emoji: "💎", category: "special" },
+  { id: "daily_spin_7", name: "Lucky 7", description: "Use the daily spin 7 days in a row", emoji: "🎰", category: "special" },
+  { id: "seasonal_owner", name: "Seasonal Flex", description: "Own a limited-edition seasonal item", emoji: "🏖️", category: "special" },
+  { id: "big_spender", name: "Big Spender", description: "Spend 1000 coins total", emoji: "💸", category: "special" },
 ];
 
 export function getUnlockedAchievements(): Achievement[] {

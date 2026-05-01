@@ -106,6 +106,77 @@ export function setLastSeenStage(stage: EvolutionStage): void {
   localStorage.setItem(KEY_LAST_STAGE, stage);
 }
 
+const KEY_CRYSTALS_USED = "aiah-evo-crystals-used";
+
+/** Get the number of evolution crystals consumed so far */
+export function getCrystalsUsed(): number {
+  if (typeof window === "undefined") return 0;
+  return parseInt(localStorage.getItem(KEY_CRYSTALS_USED) || "0", 10);
+}
+
+/** Record consuming an evolution crystal */
+export function consumeEvolutionCrystal(): void {
+  if (typeof window === "undefined") return;
+  const used = getCrystalsUsed() + 1;
+  localStorage.setItem(KEY_CRYSTALS_USED, String(used));
+}
+
+/**
+ * Check if user can evolve to the next stage.
+ * Evolution requires:
+ * 1. Sufficient XP level
+ * 2. An evolution crystal consumed for each stage transition (except egg -> hatchling)
+ *
+ * Returns:
+ * - { canEvolve: true, nextStage } if ready to evolve
+ * - { canEvolve: false, reason } if blocked
+ * - null if already at max stage
+ */
+export function getEvolutionGateStatus(): {
+  canEvolve: boolean;
+  needsCrystal: boolean;
+  nextStage: EvolutionStage | null;
+  reason?: string;
+} {
+  const info = getEvolutionInfo();
+  if (info.nextStageLevel === null) {
+    return { canEvolve: false, needsCrystal: false, nextStage: null, reason: "Max stage reached" };
+  }
+
+  const state = getXPState();
+  const nextStageIdx = info.stageIndex + 1;
+  const nextStageDef = STAGES[nextStageIdx];
+
+  if (state.level < nextStageDef.minLevel) {
+    return {
+      canEvolve: false,
+      needsCrystal: false,
+      nextStage: nextStageDef.stage,
+      reason: `Need Level ${nextStageDef.minLevel}`,
+    };
+  }
+
+  // First evolution (egg -> hatchling) is free
+  if (info.stageIndex === 0) {
+    return { canEvolve: true, needsCrystal: false, nextStage: nextStageDef.stage };
+  }
+
+  // Subsequent evolutions require a crystal
+  const crystalsUsed = getCrystalsUsed();
+  // Need (stageIndex) crystals total to reach current stage + 1 more for next
+  const crystalsNeeded = info.stageIndex; // 1 for hatchling->young, 2 for young->adult, etc.
+  if (crystalsUsed < crystalsNeeded) {
+    return {
+      canEvolve: false,
+      needsCrystal: true,
+      nextStage: nextStageDef.stage,
+      reason: "Need an Evolution Crystal",
+    };
+  }
+
+  return { canEvolve: true, needsCrystal: false, nextStage: nextStageDef.stage };
+}
+
 /**
  * Check if an evolution just happened (stage is higher than last seen).
  * Returns the new stage if evolved, null otherwise.
@@ -117,7 +188,9 @@ export function checkEvolution(): EvolutionStage | null {
   const lastIdx = STAGES.findIndex((s) => s.stage === lastSeen);
   const currentIdx = STAGES.findIndex((s) => s.stage === info.stage);
 
-  if (currentIdx > lastIdx) {
+  // Check evolution gate before allowing evolution
+  const gate = getEvolutionGateStatus();
+  if (currentIdx > lastIdx && gate.canEvolve) {
     setLastSeenStage(info.stage);
     return info.stage;
   }

@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Check, Pencil, Volume2, VolumeX } from "lucide-react";
 import { CompanionInventory } from "@/components/companion/CompanionInventory";
+import { ProfileCard } from "@/components/companion/ProfileCard";
 import { getEvolutionInfo } from "@/lib/evolution";
 import { sfx } from "@/lib/sfx";
 import { haptic } from "@/lib/haptics";
@@ -214,6 +215,16 @@ export function CompanionSetup() {
               />
             </div>
           </button>
+        </section>
+
+        {/* ─── Share profile card ──────────────────────────── */}
+        <section className="mt-8">
+          <label className={`text-[11px] font-semibold uppercase tracking-wider ${theme.textMuted}`}>
+            Share your companion
+          </label>
+          <div className="mt-3">
+            <ProfileCard username={config.name} />
+          </div>
         </section>
 
         <div className="h-24" />
