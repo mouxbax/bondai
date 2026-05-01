@@ -115,4 +115,31 @@ export const sfx = {
       { freq: 1175, dur: 0.55, delay: 0, type: "sine", gain: 0.08 },
       { freq: 1760, dur: 0.35, delay: 0.01, type: "sine", gain: 0.05 },
     ]),
+  /** Companion purr — warm low hum with harmonic overtone */
+  purr: () =>
+    play([
+      { freq: 180, dur: 0.6, delay: 0, type: "sine", gain: 0.1 },
+      { freq: 360, dur: 0.5, delay: 0.05, type: "sine", gain: 0.06 },
+      { freq: 220, dur: 0.4, delay: 0.3, type: "sine", gain: 0.08 },
+    ]),
+  /** Companion shy — soft high descending note, bashful */
+  shy: () =>
+    play([
+      { freq: 880, dur: 0.15, delay: 0, type: "sine", gain: 0.07 },
+      { freq: 660, dur: 0.2, delay: 0.1, type: "sine", gain: 0.06 },
+    ]),
+  /** Companion dizzy — wobbly descending tone */
+  dizzy: () =>
+    play([
+      { freq: 400, dur: 0.12, delay: 0, type: "triangle", gain: 0.09 },
+      { freq: 300, dur: 0.12, delay: 0.08, type: "triangle", gain: 0.08 },
+      { freq: 200, dur: 0.18, delay: 0.16, type: "triangle", gain: 0.07 },
+    ]),
+  /** Companion wake up — cheerful ascending boop */
+  wakeUp: () =>
+    play([
+      { freq: 440, dur: 0.1, delay: 0, type: "triangle", gain: 0.1 },
+      { freq: 660, dur: 0.12, delay: 0.08, type: "triangle", gain: 0.11 },
+      { freq: 880, dur: 0.18, delay: 0.16, type: "sine", gain: 0.1 },
+    ]),
 };

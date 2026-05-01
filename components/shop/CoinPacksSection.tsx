@@ -1,11 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useImperativeHandle, forwardRef, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Coins, Sparkles, Loader2, Check, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { getAllPacks, getTotalCoins } from '@/lib/coin-packs';
+
+export interface CoinPacksSectionRef {
+  expand: () => void;
+}
 
 interface CoinPacksSectionProps {
   currentCoins: number;
@@ -13,11 +17,21 @@ interface CoinPacksSectionProps {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function CoinPacksSection({ currentCoins, onPurchaseSuccess }: CoinPacksSectionProps) {
+export const CoinPacksSection = forwardRef<CoinPacksSectionRef, CoinPacksSectionProps>(function CoinPacksSection({ currentCoins, onPurchaseSuccess }, ref) {
   const [purchasing, setPurchasing] = useState<string | null>(null);
   const [purchaseSuccess, setPurchaseSuccess] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const sectionRef = useRef<HTMLButtonElement>(null);
   const packs = getAllPacks();
+
+  useImperativeHandle(ref, () => ({
+    expand: () => {
+      setExpanded(true);
+      setTimeout(() => {
+        sectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    },
+  }));
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -75,6 +89,7 @@ export function CoinPacksSection({ currentCoins, onPurchaseSuccess }: CoinPacksS
 
       {/* Compact toggle bar */}
       <button
+        ref={sectionRef}
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center justify-between px-4 py-3 md:px-8 border-b border-stone-200 dark:border-white/[0.06] hover:bg-stone-50 dark:hover:bg-white/[0.02] transition-colors"
       >
@@ -177,4 +192,4 @@ export function CoinPacksSection({ currentCoins, onPurchaseSuccess }: CoinPacksS
       )}
     </>
   );
-}
+});

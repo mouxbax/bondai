@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { MessageCircle, Wind, Sparkles } from "lucide-react";
 import { AIAHOrb } from "@/components/companion/AIAHOrb";
@@ -11,8 +11,11 @@ import { NudgeCards } from "@/components/dashboard/NudgeCards";
 import { LevelBadge } from "@/components/gamification/LevelBadge";
 import { LifeScoreRing } from "@/components/gamification/LifeScoreRing";
 import { QuestsList } from "@/components/gamification/QuestsList";
-import { useEffect, useState } from "react";
+import { EggHatch } from "@/components/companion/EggHatch";
+import { EvolutionCelebration } from "@/components/companion/EvolutionCelebration";
+import { useEffect, useState, useCallback } from "react";
 import { useEnergy } from "@/hooks/useEnergy";
+import { isEggHatched, getEvolutionInfo, checkEvolution, type EvolutionStage } from "@/lib/evolution";
 
 interface CompanionHomeProps {
   firstName?: string | null;
@@ -41,6 +44,30 @@ export function CompanionHome({ firstName }: CompanionHomeProps) {
   const { energy } = useEnergy();
   const [hour, setHour] = useState(12);
   const [line, setLine] = useState("I'm here.");
+  const [showEggHatch, setShowEggHatch] = useState(false);
+  const [hatched, setHatched] = useState(true);
+  const [evolutionStage, setEvolutionStage] = useState<EvolutionStage | null>(null);
+  const evolutionInfo = getEvolutionInfo();
+
+  // Check if egg needs hatching on mount
+  useEffect(() => {
+    const eggDone = isEggHatched();
+    setHatched(eggDone);
+    if (!eggDone) {
+      setShowEggHatch(true);
+    } else {
+      // Check for evolution
+      const evolved = checkEvolution();
+      if (evolved) {
+        setEvolutionStage(evolved);
+      }
+    }
+  }, []);
+
+  const handleHatched = useCallback(() => {
+    setHatched(true);
+    setShowEggHatch(false);
+  }, []);
 
   useEffect(() => {
     const h = new Date().getHours();
@@ -53,6 +80,24 @@ export function CompanionHome({ firstName }: CompanionHomeProps) {
   const name = firstName ? `, ${firstName}` : "";
 
   return (
+    <>
+      {/* Egg hatching overlay */}
+      <AnimatePresence>
+        {showEggHatch && (
+          <EggHatch onHatched={handleHatched} />
+        )}
+      </AnimatePresence>
+
+      {/* Evolution celebration overlay */}
+      <AnimatePresence>
+        {evolutionStage && (
+          <EvolutionCelebration
+            stage={evolutionStage}
+            onComplete={() => setEvolutionStage(null)}
+          />
+        )}
+      </AnimatePresence>
+
     <div
       className={`relative flex min-h-full flex-1 flex-col bg-gradient-to-b ${theme.bgFrom} ${theme.bgTo} transition-colors duration-1000`}
     >
@@ -83,9 +128,16 @@ export function CompanionHome({ firstName }: CompanionHomeProps) {
           <div data-tutorial="orb">
             <AIAHOrb mood={mood} size={180} energy={energy} showFace />
           </div>
-          <p className={`text-[10px] tabular-nums ${theme.textMuted}`}>
-            {energy <= 0 ? "Sleeping... recharging" : `${energy}% energy`}
-          </p>
+          <div className="flex items-center gap-2">
+            <p className={`text-[10px] tabular-nums ${theme.textMuted}`}>
+              {energy <= 0 ? "Sleeping... recharging" : `${energy}% energy`}
+            </p>
+            {hatched && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                {evolutionInfo.emoji} {evolutionInfo.label}
+              </span>
+            )}
+          </div>
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -181,5 +233,6 @@ export function CompanionHome({ firstName }: CompanionHomeProps) {
         <div className="h-24" />
       </div>
     </div>
+    </>
   );
 }

@@ -1,7 +1,10 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useMemo, useState, useEffect, useRef, useCallback } from "react";
+import { sfx } from "@/lib/sfx";
+import { haptic } from "@/lib/haptics";
+import { getCompanionConfig } from "@/lib/companion-config";
 
 export type OrbMood = "calm" | "happy" | "anxious" | "sad" | "focused" | "energetic" | "tender" | "shy" | "dizzy";
 
@@ -242,6 +245,31 @@ export function AIAHOrb({
   const [touchMood, setTouchMood] = useState<OrbMood | null>(null);
   const touchMoodTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Visual feedback state
+  const [glowFlash, setGlowFlash] = useState(false);
+  const [shakeActive, setShakeActive] = useState(false);
+
+  // Play sound + haptic for a mood reaction (respects companion config)
+  const playReaction = useCallback((type: "purr" | "shy" | "dizzy" | "wakeUp" | "tap") => {
+    const config = getCompanionConfig();
+    if (config.soundEnabled) {
+      sfx[type]();
+    }
+    // Haptics always fire (they have their own reduced-motion check)
+    const hapticMap: Record<string, "tap" | "pop" | "success" | "error"> = {
+      purr: "success",
+      shy: "pop",
+      dizzy: "error",
+      wakeUp: "success",
+      tap: "tap",
+    };
+    haptic(hapticMap[type] ?? "tap");
+
+    // Flash glow
+    setGlowFlash(true);
+    setTimeout(() => setGlowFlash(false), 400);
+  }, []);
+
   // Apply touch mood temporarily, then revert
   const applyTouchMood = useCallback((m: OrbMood, durationMs = 2500) => {
     setTouchMood(m);
@@ -263,11 +291,14 @@ export function AIAHOrb({
       if (force > 25 && Date.now() - lastShake > 3000) {
         lastShake = Date.now();
         applyTouchMood("dizzy", 3000);
+        playReaction("dizzy");
+        setShakeActive(true);
+        setTimeout(() => setShakeActive(false), 3000);
       }
     };
     window.addEventListener("devicemotion", onMotion);
     return () => window.removeEventListener("devicemotion", onMotion);
-  }, [applyTouchMood]);
+  }, [applyTouchMood, playReaction]);
 
   // Touch handlers
   const onTouchStart = useCallback((e: React.TouchEvent) => {
@@ -280,17 +311,21 @@ export function AIAHOrb({
     if (now - lastTapRef.current < 350) {
       if (energy <= 0) {
         applyTouchMood("happy", 2000);
+        playReaction("wakeUp");
+      } else {
+        playReaction("tap");
       }
       lastTapRef.current = 0;
     } else {
       lastTapRef.current = now;
     }
 
-    // Long hold = purr (happy + slow pulse)
+    // Long hold = purr (tender + slow pulse)
     holdTimerRef.current = setTimeout(() => {
       applyTouchMood("tender", 3000);
+      playReaction("purr");
     }, 800);
-  }, [energy, applyTouchMood]);
+  }, [energy, applyTouchMood, playReaction]);
 
   const onTouchMove = useCallback(() => {
     touchMoveCountRef.current += 1;
@@ -309,9 +344,16 @@ export function AIAHOrb({
     // Petting = multiple small moves on the orb
     if (touchMoveCountRef.current >= 5 && touchMoveCountRef.current < 30) {
       applyTouchMood("shy", 2500);
+      playReaction("shy");
     }
     touchStartRef.current = null;
-  }, [applyTouchMood]);
+  }, [applyTouchMood, playReaction]);
+
+  // Desktop click reaction (single click plays tap sound + haptic)
+  const handleClick = useCallback(() => {
+    playReaction("tap");
+    onClick?.();
+  }, [onClick, playReaction]);
 
   // Effective mood (touch mood overrides prop mood)
   const effectiveMood = touchMood ?? mood;
@@ -348,12 +390,22 @@ export function AIAHOrb({
       ref={containerRef}
       className="relative inline-block cursor-pointer select-none"
       style={{ width: size, height: size }}
-      onClick={onClick}
+      onClick={handleClick}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
       whileHover={{ scale: 1.03 }}
       whileTap={{ scale: 0.97 }}
+      animate={
+        shakeActive
+          ? { x: [0, -4, 4, -3, 3, -2, 2, 0], rotate: [0, -2, 2, -1, 1, 0] }
+          : { x: 0, rotate: 0 }
+      }
+      transition={
+        shakeActive
+          ? { duration: 0.5, repeat: Infinity, repeatType: "mirror" as const }
+          : { duration: 0.3 }
+      }
     >
       {/* Outer glow ring */}
       <motion.div
@@ -525,6 +577,22 @@ export function AIAHOrb({
           </motion.g>
         )}
       </svg>
+
+      {/* Glow flash on touch reaction */}
+      <AnimatePresence>
+        {glowFlash && (
+          <motion.div
+            className="absolute inset-0 rounded-full pointer-events-none z-20"
+            style={{
+              background: `radial-gradient(circle, ${effectiveConfig.colors[1]}80 0%, transparent 60%)`,
+            }}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1.2 }}
+            exit={{ opacity: 0, scale: 1.4 }}
+            transition={{ duration: 0.4 }}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Subtle shadow beneath */}
       <motion.div

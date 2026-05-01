@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Store,
@@ -17,7 +17,7 @@ import {
   ShoppingBag,
 } from "lucide-react";
 import { Header } from "@/components/layout/Header";
-import { CoinPacksSection } from "@/components/shop/CoinPacksSection";
+import { CoinPacksSection, type CoinPacksSectionRef } from "@/components/shop/CoinPacksSection";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -86,6 +86,7 @@ export default function ShopPage() {
   const [buying, setBuying] = useState<string | null>(null);
   const [filter, setFilter] = useState<Category>("ALL");
   const [toast, setToast] = useState<string | null>(null);
+  const coinPacksRef = useRef<CoinPacksSectionRef>(null);
 
   const fetchShop = useCallback(async () => {
     try {
@@ -159,16 +160,22 @@ export default function ShopPage() {
             Feed, dress, and customize your companion
           </span>
         </div>
-        <div className="flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1.5 border border-amber-200 dark:bg-amber-900/30 dark:border-amber-500/20">
+        <button
+          onClick={() => coinPacksRef.current?.expand()}
+          className="flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1.5 border border-amber-200 dark:bg-amber-900/30 dark:border-amber-500/20 hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors active:scale-95"
+          title="Tap to buy more coins"
+        >
           <Coins className="h-4 w-4 text-amber-600 dark:text-amber-400" />
           <span className="text-sm font-semibold text-amber-700 dark:text-amber-300">{coins}</span>
-        </div>
+          <span className="text-[10px] text-amber-500 dark:text-amber-400/70">+</span>
+        </button>
       </div>
 
       {/* Main content */}
       <main className="flex-1 overflow-y-auto">
         {/* Coin packs section */}
         <CoinPacksSection
+          ref={coinPacksRef}
           currentCoins={coins}
           onPurchaseSuccess={fetchShop}
         />
@@ -309,9 +316,12 @@ export default function ShopPage() {
                       </div>
 
                       {!canAfford && !isOwned && (
-                        <p className="mt-1.5 text-[10px] text-rose-400/70 text-center">
-                          Need {item.price - coins} more coins
-                        </p>
+                        <button
+                          onClick={() => coinPacksRef.current?.expand()}
+                          className="mt-1.5 text-[10px] text-amber-500 hover:text-amber-600 dark:text-amber-400 dark:hover:text-amber-300 text-center w-full transition-colors"
+                        >
+                          Need {item.price - coins} more coins — <span className="underline">Get coins</span>
+                        </button>
                       )}
                     </motion.div>
                   );

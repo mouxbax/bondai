@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { NotificationSettings } from "@/components/account/NotificationSettings";
+import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 
 type AccountData = {
   id: string;
@@ -410,6 +411,19 @@ export function AccountClient() {
               maxLength={1000}
             />
           </div>
+        </CardContent>
+      </Card>
+
+      {/* --- Language --- */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Language</CardTitle>
+          <CardDescription>
+            AIAH auto-detects your device language. You can override it here.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <LanguageSwitcher />
         </CardContent>
       </Card>
 

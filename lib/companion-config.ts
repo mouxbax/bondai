@@ -43,7 +43,7 @@ const KEY = "aiah-companion-config";
 const DEFAULT: CompanionConfig = {
   name: "AIAH",
   vibe: "calm_coach",
-  soundEnabled: false,
+  soundEnabled: true,
   ambientSound: "none",
   setupComplete: false,
 };
