@@ -6,6 +6,7 @@ import { Loader2, Package, UtensilsCrossed, Shirt } from "lucide-react";
 import Link from "next/link";
 import { sfx } from "@/lib/sfx";
 import { haptic } from "@/lib/haptics";
+import { getItemEmoji, RARITY_GLOW } from "@/lib/shop/emoji-map";
 
 interface InventoryItem {
   inventoryId: string;
@@ -26,29 +27,8 @@ interface CompanionInventoryProps {
   onFed?: (result: { item: string; energyRestored?: number; moodBoost?: string }) => void;
 }
 
-/** Map item icon/slug to emoji */
-const ITEM_EMOJI: Record<string, string> = {
-  apple: "🍎",
-  pizza: "🍕",
-  sushi: "🍣",
-  cake: "🎂",
-  droplets: "💧",
-  coffee: "🍵",
-  zap: "⚡",
-  crown: "👑",
-  glasses: "🕶️",
-  shirt: "🎀",
-  sparkles: "✨",
-  star: "⭐",
-  "flower-2": "🌸",
-  binary: "💻",
-  drama: "🎭",
-  flame: "🔥",
-};
-
 function getEmoji(icon: string | null): string {
-  if (!icon) return "🎁";
-  return ITEM_EMOJI[icon] ?? "🎁";
+  return getItemEmoji(icon);
 }
 
 // ─── Treat card (draggable food/drink item) ─────────────────────────────
@@ -74,12 +54,7 @@ function TreatCard({
   const isDragging = dragItem === item.id;
   const emoji = getEmoji(item.icon);
   const empty = item.quantity <= 0;
-  const rarityRing =
-    item.rarity === "legendary"
-      ? "ring-amber-400/40"
-      : item.rarity === "rare"
-        ? "ring-violet-400/40"
-        : "";
+  const glow = RARITY_GLOW[item.rarity] ?? RARITY_GLOW.common;
 
   return (
     <motion.div
@@ -88,8 +63,8 @@ function TreatCard({
           ? "border-white/[0.04] opacity-40 grayscale cursor-default"
           : isDragging
             ? "border-emerald-400 dark:border-emerald-500/50 shadow-lg shadow-emerald-500/20 cursor-grabbing"
-            : `border-white/[0.08] hover:border-white/[0.15] cursor-grab ${rarityRing ? `ring-1 ${rarityRing}` : ""}`
-      } bg-white/[0.04]`}
+            : `border-white/[0.08] hover:border-white/[0.15] cursor-grab ring-2 ${glow.ring}`
+      } bg-gradient-to-br ${empty ? "from-stone-900/20 to-stone-900/20" : glow.bg}`}
       style={{
         width: 72,
         ...(isDragging
@@ -115,9 +90,9 @@ function TreatCard({
       )}
 
       <div className="flex flex-col items-center gap-0.5">
-        <div className="text-2xl leading-none select-none">
+        <div className="text-[28px] leading-none select-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.2)]">
           {feeding === item.id ? (
-            <Loader2 className="h-6 w-6 animate-spin text-stone-400" />
+            <Loader2 className="h-7 w-7 animate-spin text-stone-400" />
           ) : (
             emoji
           )}
@@ -138,22 +113,17 @@ function TreatCard({
 // ─── Closet card (accessory — equip/unequip) ───────────────────────────
 function ClosetCard({ item }: { item: InventoryItem }) {
   const emoji = getEmoji(item.icon);
-  const rarityBg =
-    item.rarity === "legendary"
-      ? "ring-1 ring-amber-400/40"
-      : item.rarity === "rare"
-        ? "ring-1 ring-violet-400/40"
-        : "";
+  const glow = RARITY_GLOW[item.rarity] ?? RARITY_GLOW.common;
 
   return (
     <motion.div
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
-      className={`relative flex-shrink-0 rounded-2xl border border-white/[0.08] hover:border-white/[0.15] p-2.5 cursor-pointer select-none bg-white/[0.04] transition-all ${rarityBg}`}
+      className={`relative flex-shrink-0 rounded-2xl border border-white/[0.08] hover:border-white/[0.15] p-2.5 cursor-pointer select-none bg-gradient-to-br ${glow.bg} ring-2 ${glow.ring} transition-all`}
       style={{ width: 72 }}
     >
       <div className="flex flex-col items-center gap-0.5">
-        <div className="text-2xl leading-none">{emoji}</div>
+        <div className="text-[28px] leading-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.2)]">{emoji}</div>
         <span className="text-[9px] font-medium text-stone-400 text-center leading-tight truncate w-full">
           {item.name}
         </span>

@@ -34,10 +34,15 @@ const config: Config = {
           "0%, 100%": { opacity: "1" },
           "50%": { opacity: "0" },
         },
+        shimmer: {
+          "0%": { backgroundPosition: "200% 0" },
+          "100%": { backgroundPosition: "-200% 0" },
+        },
       },
       animation: {
         "pulse-soft": "pulse-soft 2s ease-in-out infinite",
         blink: "blink 1s step-end infinite",
+        shimmer: "shimmer 3s ease-in-out infinite",
       },
     },
   },

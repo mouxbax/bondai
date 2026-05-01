@@ -5,19 +5,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Store,
   Coins,
-  Apple,
-  Droplets,
-  Crown,
-  Glasses,
-  Sparkles,
-  Star,
-  Zap,
   Loader2,
   Check,
-  ShoppingBag,
 } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { CoinPacksSection, type CoinPacksSectionRef } from "@/components/shop/CoinPacksSection";
+import { ItemIcon } from "@/components/shop/ItemIcon";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -38,12 +31,12 @@ interface ShopItem {
   equipped: boolean;
 }
 
-const categoryIcons: Record<string, React.ReactNode> = {
-  FOOD: <Apple className="h-4 w-4" />,
-  DRINK: <Droplets className="h-4 w-4" />,
-  ACCESSORY: <Crown className="h-4 w-4" />,
-  BACKGROUND: <Star className="h-4 w-4" />,
-  PERSONALITY: <Sparkles className="h-4 w-4" />,
+const categoryEmoji: Record<string, string> = {
+  FOOD: "🍎",
+  DRINK: "🍵",
+  ACCESSORY: "👑",
+  BACKGROUND: "🌌",
+  PERSONALITY: "🎭",
 };
 
 const rarityColors: Record<string, string> = {
@@ -63,19 +56,6 @@ const rarityBadge: Record<string, string> = {
   rare: "bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300",
   legendary: "bg-amber-100 text-amber-700 dark:bg-amber-900/60 dark:text-amber-300",
 };
-
-function getItemIcon(iconName: string | null) {
-  switch (iconName) {
-    case "apple": return <Apple className="h-6 w-6" />;
-    case "droplets": return <Droplets className="h-6 w-6" />;
-    case "crown": return <Crown className="h-6 w-6" />;
-    case "glasses": return <Glasses className="h-6 w-6" />;
-    case "sparkles": return <Sparkles className="h-6 w-6" />;
-    case "star": return <Star className="h-6 w-6" />;
-    case "zap": return <Zap className="h-6 w-6" />;
-    default: return <ShoppingBag className="h-6 w-6" />;
-  }
-}
 
 export default function ShopPage() {
   const [items, setItems] = useState<ShopItem[]>([]);
@@ -196,7 +176,7 @@ export default function ShopPage() {
                     : "bg-white text-stone-500 border border-stone-200 hover:text-stone-700 dark:bg-white/[0.04] dark:border-white/[0.06] dark:hover:text-stone-300"
                 )}
               >
-                {cat !== "ALL" && categoryIcons[cat]}
+                {cat !== "ALL" && <span className="text-sm">{categoryEmoji[cat]}</span>}
                 {cat === "ALL" ? "All" : cat.charAt(0) + cat.slice(1).toLowerCase()}
               </button>
             ))}
@@ -231,11 +211,9 @@ export default function ShopPage() {
                         rarityGlow[item.rarity],
                       )}
                     >
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-2.5">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-stone-100 text-stone-600 dark:bg-white/[0.06] dark:text-stone-300">
-                            {getItemIcon(item.icon)}
-                          </div>
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <ItemIcon icon={item.icon} rarity={item.rarity} size="md" />
                           <div>
                             <h3 className="text-sm font-semibold text-stone-800 dark:text-stone-200">{item.name}</h3>
                             <span className={cn("text-[10px] rounded-full px-2 py-0.5 font-medium", rarityBadge[item.rarity])}>
