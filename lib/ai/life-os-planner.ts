@@ -1,4 +1,4 @@
-import { FALLBACK_MODEL, PRIMARY_MODEL, getOpenRouterClient } from "@/lib/ai/client";
+import { FALLBACK_MODEL, PRIMARY_MODEL, getOpenAIClient } from "@/lib/ai/client";
 import type {
   LifeOsData,
   WeeklyPlanData,
@@ -298,7 +298,7 @@ function extractJson(text: string): string {
 }
 
 async function callModel(model: string, profile: LifeOsData, weekStartIso: string): Promise<RawPlan> {
-  const client = getOpenRouterClient();
+  const client = getOpenAIClient();
   const res = await client.chat.completions.create({
     model,
     messages: [

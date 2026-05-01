@@ -8,7 +8,7 @@ export async function detectCrisisFromText(text: string): Promise<CrisisPayload>
     return { isCrisis: false, severity: "low", keywords: [] };
   }
 
-  if (!process.env.OPENROUTER_API_KEY) {
+  if (!process.env.OPENAI_API_KEY) {
     return keywordCrisisFallback(trimmed);
   }
 

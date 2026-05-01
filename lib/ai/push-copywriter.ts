@@ -1,4 +1,4 @@
-import { FALLBACK_MODEL, getOpenRouterClient } from "@/lib/ai/client";
+import { FALLBACK_MODEL, getOpenAIClient } from "@/lib/ai/client";
 
 export type NudgeSlot = "morning" | "midday" | "afternoon" | "evening" | "night";
 
@@ -75,7 +75,7 @@ export async function writeNudge(ctx: NudgeContext): Promise<NudgeCopy> {
   const fallback = fallbackCopy(ctx);
   let client;
   try {
-    client = getOpenRouterClient();
+    client = getOpenAIClient();
   } catch {
     return fallback;
   }

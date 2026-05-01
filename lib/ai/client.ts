@@ -13,24 +13,6 @@ export function getOpenAIClient(): OpenAI {
   return new OpenAI({ apiKey: openaiKey });
 }
 
-// ── OpenRouter client (kept for backward compat / utility calls) ─────
-const orBaseURL = process.env.OPENROUTER_BASE_URL ?? "https://openrouter.ai/api/v1";
-const orApiKey = process.env.OPENROUTER_API_KEY ?? "";
-
-export function getOpenRouterClient(): OpenAI {
-  if (!orApiKey) {
-    throw new Error("OPENROUTER_API_KEY is not set");
-  }
-  return new OpenAI({
-    apiKey: orApiKey,
-    baseURL: orBaseURL,
-    defaultHeaders: {
-      "HTTP-Referer": process.env.NEXTAUTH_URL ?? "https://aiah.app",
-      "X-Title": "AIAH",
-    },
-  });
-}
-
 export async function chatCompletionJson<T>(
   system: string,
   user: string,

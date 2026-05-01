@@ -8,7 +8,7 @@ export async function detectEmotionFromText(text: string): Promise<EmotionResult
     return { emotion: "NEUTRAL", confidence: 0 };
   }
 
-  if (!process.env.OPENROUTER_API_KEY) {
+  if (!process.env.OPENAI_API_KEY) {
     return heuristicEmotion(trimmed);
   }
 
