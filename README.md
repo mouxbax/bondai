@@ -25,7 +25,7 @@ BondAI is a mobile-first PWA that uses AI as a **bridge** toward real human conn
    cp .env.local.example .env.local
    ```
 
-   Fill in `DATABASE_URL`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, and `OPENROUTER_API_KEY` at minimum. For Google sign-in, add `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`. For magic links, configure `EMAIL_SERVER` and `EMAIL_FROM`.
+   Fill in `DATABASE_URL`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, and `OPENAI_API_KEY` at minimum. For Google sign-in, add `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`. For magic links, configure `EMAIL_SERVER` and `EMAIL_FROM`.
 
 3. **Database**
 
