@@ -14,7 +14,6 @@ import {
   ShoppingCart,
   CheckSquare,
   Send,
-  RefreshCw,
   Loader2,
   Zap,
   Lock,

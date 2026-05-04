@@ -37,14 +37,14 @@ export function MiniJournal() {
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <label className="text-xs font-semibold text-stone-600 dark:text-stone-400">
-          Today's note
+          Today&apos;s note
         </label>
         {saved && <span className="text-xs text-emerald-500">Saved</span>}
       </div>
       <Textarea
         value={entry}
         onChange={(e) => setEntry(e.target.value)}
-        placeholder="How are you feeling today? What's on your mind?"
+        placeholder="How are you feeling today? What is on your mind?"
         className="rounded-lg min-h-24 text-xs resize-none"
       />
       <Button
