@@ -302,6 +302,9 @@ export function AIAHOrb({
 
   // Touch handlers
   const onTouchStart = useCallback((e: React.TouchEvent) => {
+    // Prevent page scroll & text selection while interacting with the orb
+    e.preventDefault();
+    e.stopPropagation();
     const t = e.touches[0];
     touchStartRef.current = { x: t.clientX, y: t.clientY, time: Date.now() };
     touchMoveCountRef.current = 0;
@@ -327,7 +330,8 @@ export function AIAHOrb({
     }, 800);
   }, [energy, applyTouchMood, playReaction]);
 
-  const onTouchMove = useCallback(() => {
+  const onTouchMove = useCallback((e: React.TouchEvent) => {
+    e.preventDefault();
     touchMoveCountRef.current += 1;
     // If moving a lot, cancel hold
     if (holdTimerRef.current && touchMoveCountRef.current > 3) {
@@ -400,7 +404,7 @@ export function AIAHOrb({
     <motion.div
       ref={containerRef}
       className="relative inline-block cursor-pointer select-none"
-      style={{ width: size, height: size }}
+      style={{ width: size, height: size, touchAction: "none", WebkitUserSelect: "none" }}
       onClick={handleClick}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
