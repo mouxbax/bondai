@@ -464,7 +464,8 @@ export function VoiceConversation({
       setPhase("idle");
       setError(chatError);
     }
-  }, [chatError, open, teardownAudio]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chatError, open, teardownAudio, stopTTS]);
 
   const retry = () => {
     setError(null);

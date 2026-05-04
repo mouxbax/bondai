@@ -151,11 +151,15 @@ export async function POST(request: NextRequest) {
  * Get plan type from Stripe price ID
  */
 function getPlanFromPriceId(priceId: string): string {
-  const PRICE_PLUS = process.env.STRIPE_PRICE_PLUS || 'price_plus_default';
-  const PRICE_CARE_PLUS = process.env.STRIPE_PRICE_CARE_PLUS || 'price_care_plus_default';
+  const PRICE_PLUS = process.env.STRIPE_PRICE_PLUS;
+  const PRICE_CARE_PLUS = process.env.STRIPE_PRICE_CARE_PLUS;
 
-  if (priceId === PRICE_PLUS) return 'plus';
-  if (priceId === PRICE_CARE_PLUS) return 'care_plus';
+  if (!PRICE_PLUS || !PRICE_CARE_PLUS) {
+    console.error('[STRIPE] Missing STRIPE_PRICE_PLUS or STRIPE_PRICE_CARE_PLUS env vars — cannot map price to plan');
+  }
+
+  if (PRICE_PLUS && priceId === PRICE_PLUS) return 'plus';
+  if (PRICE_CARE_PLUS && priceId === PRICE_CARE_PLUS) return 'care_plus';
   return 'free';
 }
 

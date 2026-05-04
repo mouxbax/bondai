@@ -77,7 +77,6 @@ interface LocaleProviderProps {
  */
 export function LocaleProvider({ children }: LocaleProviderProps) {
   const [locale, setLocale] = useState<Locale>("en");
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     // Initialize from localStorage or cookie or browser language
@@ -103,7 +102,6 @@ export function LocaleProvider({ children }: LocaleProviderProps) {
     localStorage.setItem("aiah-locale", initialLocale);
     document.documentElement.lang = initialLocale;
     document.cookie = `aiah-locale=${initialLocale}; path=/; max-age=31536000`;
-    setMounted(true);
   }, []);
 
   const setLocaleState = (newLocale: Locale) => {
