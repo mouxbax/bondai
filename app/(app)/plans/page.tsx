@@ -27,6 +27,7 @@ import { useEnergy } from "@/hooks/useEnergy";
 import { useMood } from "@/lib/mood-context";
 import { LifeOsForm } from "@/components/life-os/LifeOsForm";
 import type { LifeOsData } from "@/lib/life-os/types";
+import { WeekProgress } from "@/components/life-os/WeekProgress";
 
 // ─── Sub-page grid tiles ─────────────────────────────────────────────
 const planTiles = [
@@ -264,6 +265,9 @@ export default function LifeOsHubPage() {
           </motion.div>
         ) : (
           <>
+            {/* ─── WEEKLY PROGRESS ─────────────────────────────── */}
+            <WeekProgress />
+
             {/* ─── TOP PRIORITIES ──────────────────────────────── */}
             {plan.topPriorities && plan.topPriorities.length > 0 && (
               <motion.section

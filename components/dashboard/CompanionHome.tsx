@@ -9,12 +9,15 @@ import { MoodSelector } from "@/components/dashboard/MoodSelector";
 import { LifeModules } from "@/components/dashboard/LifeModules";
 // NudgeCards removed — clean home screen
 import { LevelBadge } from "@/components/gamification/LevelBadge";
+import { StreakBadge } from "@/components/gamification/StreakBadge";
 import { LifeScoreRing } from "@/components/gamification/LifeScoreRing";
 import { QuestsList } from "@/components/gamification/QuestsList";
 import { EvolutionCelebration } from "@/components/companion/EvolutionCelebration";
+import { CompanionBubble } from "@/components/companion/CompanionBubble";
 import { useEffect, useState } from "react";
 import { useEnergy } from "@/hooks/useEnergy";
 import { getEvolutionInfo, checkEvolution, type EvolutionStage } from "@/lib/evolution";
+import { useStreak } from "@/hooks/useStreak";
 
 interface CompanionHomeProps {
   firstName?: string | null;
@@ -41,6 +44,7 @@ const moodLines: Record<string, string[]> = {
 export function CompanionHome({ firstName }: CompanionHomeProps) {
   const { mood, theme, isDay } = useMood();
   const { energy } = useEnergy();
+  const { currentStreak } = useStreak();
   const [hour, setHour] = useState(12);
   const [line, setLine] = useState("I'm here.");
   const [evolutionStage, setEvolutionStage] = useState<EvolutionStage | null>(null);
@@ -113,7 +117,9 @@ export function CompanionHome({ firstName }: CompanionHomeProps) {
             <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
               {evolutionInfo.emoji} {evolutionInfo.label}
             </span>
+            <StreakBadge />
           </div>
+          <CompanionBubble mood={mood} streak={currentStreak} firstName={firstName} />
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}

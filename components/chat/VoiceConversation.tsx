@@ -87,6 +87,8 @@ export function VoiceConversation({
 
   const streamRef = useRef<MediaStream | null>(null);
   const ttsAudioRef = useRef<HTMLAudioElement | null>(null);
+  const ttsCtxRef = useRef<AudioContext | null>(null);
+  const ttsSourceRef = useRef<AudioBufferSourceNode | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -102,8 +104,26 @@ export function VoiceConversation({
   const shouldLoopRef = useRef(true);
   const listeningRef = useRef(false);
 
+  /** Ensure we have an AudioContext for TTS playback (unlocked on user gesture) */
+  const ensureTTSContext = useCallback(() => {
+    if (!ttsCtxRef.current || ttsCtxRef.current.state === "closed") {
+      ttsCtxRef.current = new AudioContext();
+    }
+    // Resume if suspended (mobile requires resume inside gesture)
+    if (ttsCtxRef.current.state === "suspended") {
+      ttsCtxRef.current.resume().catch(() => {});
+    }
+    return ttsCtxRef.current;
+  }, []);
+
   /** Stop any in-flight TTS audio */
   const stopTTS = useCallback(() => {
+    // Stop AudioBuffer-based playback
+    if (ttsSourceRef.current) {
+      try { ttsSourceRef.current.stop(); } catch {}
+      ttsSourceRef.current = null;
+    }
+    // Stop legacy Audio element playback
     if (ttsAudioRef.current) {
       ttsAudioRef.current.pause();
       const src = ttsAudioRef.current.src;
@@ -135,7 +155,31 @@ export function VoiceConversation({
           onEnd?.();
           return;
         }
-        const blob = await res.blob();
+        const arrayBuffer = await res.arrayBuffer();
+
+        // Try AudioContext first (works on mobile when pre-unlocked)
+        const ctx = ttsCtxRef.current;
+        if (ctx && ctx.state === "running") {
+          try {
+            const audioBuffer = await ctx.decodeAudioData(arrayBuffer.slice(0));
+            const source = ctx.createBufferSource();
+            source.buffer = audioBuffer;
+            source.connect(ctx.destination);
+            ttsSourceRef.current = source;
+            source.onended = () => {
+              ttsSourceRef.current = null;
+              setPhase("idle");
+              onEnd?.();
+            };
+            source.start(0);
+            return;
+          } catch (decodeErr) {
+            console.warn("[TTS] AudioContext decode failed, falling back", decodeErr);
+          }
+        }
+
+        // Fallback: Audio element (works on desktop, may fail on mobile)
+        const blob = new Blob([arrayBuffer], { type: "audio/mpeg" });
         const url = URL.createObjectURL(blob);
         const audio = new Audio(url);
         ttsAudioRef.current = audio;
@@ -275,6 +319,9 @@ export function VoiceConversation({
 
     setError(null);
 
+    // Unlock AudioContext for TTS on mobile (must happen during user gesture)
+    ensureTTSContext();
+
     let stream: MediaStream;
     try {
       stream = await navigator.mediaDevices.getUserMedia({
@@ -398,7 +445,7 @@ export function VoiceConversation({
       rafRef.current = requestAnimationFrame(tick);
     };
     rafRef.current = requestAnimationFrame(tick);
-  }, [open, stopListening, teardownAudio, transcribeAndSend]);
+  }, [open, stopListening, teardownAudio, transcribeAndSend, ensureTTSContext]);
 
   // On open: kick off the loop
   useEffect(() => {

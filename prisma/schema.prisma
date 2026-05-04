@@ -152,11 +152,12 @@ model LifeOsProfile {
 
 /// A generated week plan. Regenerated every Sunday (or on demand) from LifeOsProfile.
 model WeeklyPlan {
-  id         String   @id @default(cuid())
-  userId     String
-  weekStart  DateTime // Monday 00:00 in user's local tz (stored UTC)
-  data       Json     // see WeeklyPlanData type
-  createdAt  DateTime @default(now())
+  id             String   @id @default(cuid())
+  userId         String
+  weekStart      DateTime // Monday 00:00 in user's local tz (stored UTC)
+  data           Json     // see WeeklyPlanData type
+  progressData   Json?    // { monday: [true, false], ... } task completion tracking
+  createdAt      DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
