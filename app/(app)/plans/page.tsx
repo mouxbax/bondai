@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles,
   Target,
@@ -18,11 +18,15 @@ import {
   Loader2,
   Zap,
   Lock,
+  ChevronDown,
+  Settings2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useWeeklyPlan } from "@/hooks/useWeeklyPlan";
 import { useEnergy } from "@/hooks/useEnergy";
 import { useMood } from "@/lib/mood-context";
+import { LifeOsForm } from "@/components/life-os/LifeOsForm";
+import type { LifeOsData } from "@/lib/life-os/types";
 
 // ─── Sub-page grid tiles ─────────────────────────────────────────────
 const planTiles = [
@@ -104,6 +108,26 @@ export default function LifeOsHubPage() {
   const { theme } = useMood();
   const [generating, setGenerating] = useState(false);
   const [genError, setGenError] = useState<string | null>(null);
+  const [profile, setProfile] = useState<LifeOsData | null>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [profileOpen, setProfileOpen] = useState(false);
+
+  const loadProfile = useCallback(async () => {
+    try {
+      const res = await fetch("/api/life-os", { cache: "no-store" });
+      if (!res.ok) return;
+      const j = await res.json();
+      setProfile(j.profile ?? {});
+    } finally {
+      setProfileLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadProfile();
+  }, [loadProfile]);
+
+  const hasProfile = profile && Object.keys(profile).length > 0;
 
   const generate = async () => {
     setGenerating(true);
@@ -200,25 +224,43 @@ export default function LifeOsHubPage() {
         </motion.section>
 
         {!plan ? (
-          /* ─── No plan state ────────────────────────────────── */
+          /* ─── No plan: show profile form + generate ─────── */
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="rounded-2xl border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900/40 p-8 text-center"
+            className="space-y-5"
           >
-            <Sparkles className="h-8 w-8 text-emerald-500 mx-auto mb-3" />
-            <h3 className={`font-semibold text-lg mb-2 ${theme.text}`}>No plan generated yet</h3>
-            <p className={`text-sm max-w-sm mx-auto mb-4 ${theme.textMuted}`}>
-              Fill in your Life OS profile, then generate your first plan. AIAH will build your
-              schedule, workouts, grocery list, finances, and outreach plan.
-            </p>
-            <Link href="/plans/schedule">
-              <Button className="rounded-xl">
-                <Sparkles className="h-4 w-4 mr-2" />
-                Get started
+            <div className="rounded-2xl border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900/40 p-6 text-center">
+              <Sparkles className="h-8 w-8 text-emerald-500 mx-auto mb-3" />
+              <h3 className={`font-semibold text-lg mb-2 ${theme.text}`}>Set up your Life OS</h3>
+              <p className={`text-sm max-w-sm mx-auto mb-4 ${theme.textMuted}`}>
+                Fill in your profile below (10 min, one time). Then generate your plan — AIAH builds
+                schedule, workouts, grocery list, finances, and outreach.
+              </p>
+              <Button
+                onClick={generate}
+                disabled={generating || !hasProfile || energy <= 13}
+                className="rounded-xl"
+              >
+                {generating ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <Sparkles className="h-4 w-4 mr-2" />
+                )}
+                {hasProfile ? "Generate my plan" : "Fill profile first"}
               </Button>
-            </Link>
+            </div>
+
+            {/* Profile form — always visible when no plan */}
+            {!profileLoading && (
+              <section>
+                <h3 className={`text-xs font-semibold uppercase tracking-wider mb-3 ${theme.textMuted}`}>
+                  Your Life OS profile
+                </h3>
+                <LifeOsForm initial={profile ?? {}} onSaved={(d) => setProfile(d)} />
+              </section>
+            )}
           </motion.div>
         ) : (
           <>
@@ -344,6 +386,43 @@ export default function LifeOsHubPage() {
             })}
           </div>
         </motion.section>
+
+        {/* ─── Edit Profile (collapsible) ────────────────────── */}
+        {plan && !profileLoading && (
+          <motion.section
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35 }}
+          >
+            <button
+              onClick={() => setProfileOpen(!profileOpen)}
+              className={`flex w-full items-center justify-between rounded-xl border border-stone-200 dark:border-stone-800 bg-white/60 dark:bg-white/[0.03] px-4 py-3 transition-colors hover:bg-stone-50 dark:hover:bg-white/[0.05]`}
+            >
+              <div className="flex items-center gap-2">
+                <Settings2 className="h-4 w-4 text-stone-500" />
+                <span className={`text-sm font-medium ${theme.text}`}>Edit Life OS Profile</span>
+              </div>
+              <ChevronDown
+                className={`h-4 w-4 text-stone-400 transition-transform ${profileOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+            <AnimatePresence>
+              {profileOpen && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="overflow-hidden"
+                >
+                  <div className="pt-4">
+                    <LifeOsForm initial={profile ?? {}} onSaved={(d) => setProfile(d)} />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.section>
+        )}
 
         {/* ─── Sunday review link ─────────────────────────────── */}
         {plan?.reflections && plan.reflections.length > 0 && (
