@@ -297,9 +297,10 @@ export default function LifeOsHubPage() {
                     </li>
                   ))}
                 </ol>
+                <div className="mt-3">
+                  <ExportPlanButton data={plan} />
                 </div>
-              <ExportPlanButton data={plan} />
-            </motion.section>
+              </motion.section>
             )}
 
             {/* ─── HABIT TRACKER ──────────────────────────────── */}
