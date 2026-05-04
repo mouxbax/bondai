@@ -29,7 +29,7 @@ import { cn } from "@/lib/utils";
 const mobileItems = [
   { href: "/home", label: "Home", icon: Home },
   { href: "/talk", label: "Talk", icon: MessageCircle },
-  { href: "/goals", label: "Life OS", icon: CalendarDays },
+  { href: "/plans", label: "Life OS", icon: CalendarDays },
   { href: "/breathe", label: "Breathe", icon: Wind },
 ];
 
@@ -37,7 +37,7 @@ const mobileItems = [
 const sideItems = [
   { href: "/home", label: "Home", icon: Home },
   { href: "/talk", label: "Talk", icon: MessageCircle },
-  { href: "/goals", label: "Life OS", icon: CalendarDays },
+  { href: "/plans", label: "Life OS", icon: CalendarDays },
   { href: "/breathe", label: "Breathe", icon: Wind },
 ];
 

@@ -72,11 +72,11 @@ export function PlanSectionShell({ title, icon, children }: PlanSectionShellProp
       {/* Header */}
       <div className="border-b border-stone-200 dark:border-stone-800 px-4 py-4 md:px-8">
         <Link
-          href="/home"
+          href="/plans"
           className="mb-3 inline-flex items-center gap-1.5 text-xs text-stone-500 hover:text-stone-300 transition-colors"
         >
           <ArrowLeft className="h-3 w-3" />
-          Home
+          Life OS
         </Link>
         <div className="flex items-center justify-between gap-4">
           <div>
@@ -105,7 +105,7 @@ export function PlanSectionShell({ title, icon, children }: PlanSectionShellProp
                 variant="outline"
                 size="sm"
                 onClick={generate}
-                disabled={generating || energy < 50}
+                disabled={generating || energy <= 13}
                 className="rounded-xl text-xs"
               >
                 {generating ? (
@@ -114,7 +114,7 @@ export function PlanSectionShell({ title, icon, children }: PlanSectionShellProp
                   <Wand2 className="h-3.5 w-3.5" />
                 )}
                 <span className="ml-1.5">
-                  {generating ? "Generating..." : "Generate plan (-50%)"}
+                  {generating ? "Generating..." : "Regenerate"}
                 </span>
               </Button>
             )}
