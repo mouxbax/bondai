@@ -171,102 +171,120 @@ export default function LifeOsHubPage() {
     <div className={`flex min-h-0 flex-1 flex-col bg-gradient-to-b ${theme.bgFrom} ${theme.bgTo}`}>
       <div className="mx-auto w-full max-w-2xl px-4 py-6 md:px-8 space-y-6">
 
-        {/* ─── THIS WEEK hero ─────────────────────────────────── */}
+        {/* ─── LIFE OS PROFILE (collapsible) ─────────────────── */}
+        {!profileLoading && (
+          <motion.section
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <button
+              onClick={() => setProfileOpen(!profileOpen)}
+              className="flex w-full items-center justify-between rounded-xl border border-stone-200 dark:border-stone-800 bg-white/60 dark:bg-white/[0.03] px-4 py-3 transition-colors hover:bg-stone-50 dark:hover:bg-white/[0.05]"
+            >
+              <div className="flex items-center gap-2">
+                <Settings2 className="h-4 w-4 text-stone-500" />
+                <span className={`text-sm font-medium ${theme.text}`}>Life OS Profile</span>
+                {!hasProfile && (
+                  <span className="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
+                    Setup required
+                  </span>
+                )}
+              </div>
+              <ChevronDown
+                className={`h-4 w-4 text-stone-400 transition-transform ${profileOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+            <AnimatePresence>
+              {profileOpen && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="overflow-hidden"
+                >
+                  <div className="pt-4">
+                    <LifeOsForm initial={profile ?? {}} onSaved={(d) => setProfile(d)} />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.section>
+        )}
+
+        {/* ─── GENERATE BUTTON (prominent, with 7-day cooldown) ── */}
         <motion.section
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-2xl border border-emerald-200/60 dark:border-emerald-900/40 bg-gradient-to-br from-emerald-50/60 to-transparent dark:from-emerald-950/20 p-5"
+          transition={{ delay: 0.05 }}
         >
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex-1 min-w-0">
-              <p className={`text-[11px] font-semibold uppercase tracking-wider ${theme.textMuted}`}>
-                This week
-              </p>
-              {weekRange && (
-                <p className={`text-xs mt-0.5 ${theme.textMuted}`}>{weekRange}</p>
-              )}
-              {plan?.weekTheme && (
-                <h1 className={`text-lg font-semibold mt-1.5 flex items-center gap-2 ${theme.text}`}>
-                  <Sparkles className="h-4 w-4 text-emerald-600 shrink-0" />
-                  <span>{plan.weekTheme}</span>
-                </h1>
-              )}
-            </div>
-            <div className="flex flex-col items-end gap-2 shrink-0">
-              {/* Energy badge */}
+          {!planCooldown.canGenerate && planCooldown.nextAvailableAt ? (
+            <div className="flex items-center justify-between rounded-2xl border border-stone-200/60 dark:border-stone-800 bg-gradient-to-r from-stone-50/80 to-stone-100/40 dark:from-white/[0.04] dark:to-white/[0.02] px-5 py-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-stone-200/60 dark:bg-white/10">
+                  <Lock className="h-4 w-4 text-stone-500" />
+                </div>
+                <div>
+                  <p className={`text-sm font-medium ${theme.text}`}>Next plan available in</p>
+                  <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                    {formatCooldown(planCooldown.nextAvailableAt)}
+                  </p>
+                </div>
+              </div>
               <div className="flex items-center gap-1.5 text-xs text-stone-500">
                 <Zap className="h-3.5 w-3.5 text-emerald-500" />
                 {energy}%
               </div>
-              {/* Regenerate / cooldown */}
-              {!planCooldown.canGenerate && planCooldown.nextAvailableAt ? (
-                <div className="flex items-center gap-1.5 text-[10px] text-stone-500">
-                  <Lock className="h-3 w-3" />
-                  {formatCooldown(planCooldown.nextAvailableAt)}
-                </div>
-              ) : (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={generate}
-                  disabled={generating || energy <= 13}
-                  className="rounded-xl text-xs h-8"
-                >
-                  {generating ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <RefreshCw className="h-3.5 w-3.5" />
-                  )}
-                  <span className="ml-1.5">{generating ? "Generating..." : "Regenerate"}</span>
-                </Button>
-              )}
             </div>
-          </div>
+          ) : (
+            <Button
+              onClick={generate}
+              disabled={generating || !hasProfile || energy <= 13}
+              className="w-full rounded-2xl h-14 text-base font-semibold bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 shadow-lg shadow-emerald-500/20"
+            >
+              {generating ? (
+                <Loader2 className="h-5 w-5 animate-spin mr-2" />
+              ) : (
+                <Sparkles className="h-5 w-5 mr-2" />
+              )}
+              {generating
+                ? "Generating your plan..."
+                : plan
+                  ? "Regenerate weekly plan"
+                  : hasProfile
+                    ? "Generate my plan"
+                    : "Fill profile first"}
+            </Button>
+          )}
           {genError && (
             <p className="mt-2 text-xs text-rose-500">{genError}</p>
           )}
         </motion.section>
 
-        {!plan ? (
-          /* ─── No plan: show profile form + generate ─────── */
-          <motion.div
+        {/* ─── THIS WEEK hero ─────────────────────────────────── */}
+        {plan && (
+          <motion.section
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="space-y-5"
+            transition={{ delay: 0.08 }}
+            className="rounded-2xl border border-emerald-200/60 dark:border-emerald-900/40 bg-gradient-to-br from-emerald-50/60 to-transparent dark:from-emerald-950/20 p-5"
           >
-            <div className="rounded-2xl border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900/40 p-6 text-center">
-              <Sparkles className="h-8 w-8 text-emerald-500 mx-auto mb-3" />
-              <h3 className={`font-semibold text-lg mb-2 ${theme.text}`}>Set up your Life OS</h3>
-              <p className={`text-sm max-w-sm mx-auto mb-4 ${theme.textMuted}`}>
-                Fill in your profile below (10 min, one time). Then generate your plan — AIAH builds
-                schedule, workouts, grocery list, finances, and outreach.
-              </p>
-              <Button
-                onClick={generate}
-                disabled={generating || !hasProfile || energy <= 13}
-                className="rounded-xl"
-              >
-                {generating ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <Sparkles className="h-4 w-4 mr-2" />
-                )}
-                {hasProfile ? "Generate my plan" : "Fill profile first"}
-              </Button>
-            </div>
-
-            {/* Profile form — always visible when no plan */}
-            {!profileLoading && (
-              <section>
-                <h3 className={`text-xs font-semibold uppercase tracking-wider mb-3 ${theme.textMuted}`}>
-                  Your Life OS profile
-                </h3>
-                <LifeOsForm initial={profile ?? {}} onSaved={(d) => setProfile(d)} />
-              </section>
+            <p className={`text-[11px] font-semibold uppercase tracking-wider ${theme.textMuted}`}>
+              This week
+            </p>
+            {weekRange && (
+              <p className={`text-xs mt-0.5 ${theme.textMuted}`}>{weekRange}</p>
             )}
-          </motion.div>
-        ) : (
+            {plan.weekTheme && (
+              <h1 className={`text-lg font-semibold mt-1.5 flex items-center gap-2 ${theme.text}`}>
+                <Sparkles className="h-4 w-4 text-emerald-600 shrink-0" />
+                <span>{plan.weekTheme}</span>
+              </h1>
+            )}
+          </motion.section>
+        )}
+
+        {plan && (
           <>
             {/* ─── WEEKLY PROGRESS ─────────────────────────────── */}
             <WeekProgress />
@@ -403,43 +421,6 @@ export default function LifeOsHubPage() {
             })}
           </div>
         </motion.section>
-
-        {/* ─── Edit Profile (collapsible) ────────────────────── */}
-        {plan && !profileLoading && (
-          <motion.section
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35 }}
-          >
-            <button
-              onClick={() => setProfileOpen(!profileOpen)}
-              className={`flex w-full items-center justify-between rounded-xl border border-stone-200 dark:border-stone-800 bg-white/60 dark:bg-white/[0.03] px-4 py-3 transition-colors hover:bg-stone-50 dark:hover:bg-white/[0.05]`}
-            >
-              <div className="flex items-center gap-2">
-                <Settings2 className="h-4 w-4 text-stone-500" />
-                <span className={`text-sm font-medium ${theme.text}`}>Edit Life OS Profile</span>
-              </div>
-              <ChevronDown
-                className={`h-4 w-4 text-stone-400 transition-transform ${profileOpen ? "rotate-180" : ""}`}
-              />
-            </button>
-            <AnimatePresence>
-              {profileOpen && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="overflow-hidden"
-                >
-                  <div className="pt-4">
-                    <LifeOsForm initial={profile ?? {}} onSaved={(d) => setProfile(d)} />
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.section>
-        )}
 
         {/* ─── Sunday review link ─────────────────────────────── */}
         {plan?.reflections && plan.reflections.length > 0 && (
