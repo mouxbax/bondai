@@ -117,11 +117,6 @@ export function LocaleProvider({ children }: LocaleProviderProps) {
     );
   };
 
-  if (!mounted) {
-    // Return children without context during SSR
-    return children;
-  }
-
   return (
     <LocaleContext.Provider
       value={{

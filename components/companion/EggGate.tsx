@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { AnimatePresence } from "framer-motion";
-import { isEggHatched, setAccountCreatedDate } from "@/lib/evolution";
+import { isEggHatched, markEggHatched, setAccountCreatedDate } from "@/lib/evolution";
 import { EggHatch } from "@/components/companion/EggHatch";
 
 /**
@@ -25,6 +25,7 @@ export function EggGate({ children }: { children: React.ReactNode }) {
   }, []);
 
   const handleHatched = () => {
+    markEggHatched(); // persist to localStorage so gate doesn't re-trigger
     setNeedsHatch(false);
     // Also sync to server so it persists across devices
     fetch("/api/pet/hatch", { method: "POST" }).catch(() => {});
