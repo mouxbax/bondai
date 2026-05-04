@@ -9,6 +9,7 @@ import { PageTransition } from "@/components/layout/PageTransition";
 import { RitualModal } from "@/components/companion/RitualModal";
 import { AmbientPlayer } from "@/components/companion/AmbientPlayer";
 import { TutorialGate } from "@/components/tutorial/TutorialGate";
+import { EggGate } from "@/components/companion/EggGate";
 
 export const metadata: Metadata = {
   robots: "noindex, nofollow",
@@ -69,14 +70,16 @@ export default async function AppShellLayout({ children }: { children: React.Rea
   }
 
   return (
-    <div className="flex min-h-[100dvh] bg-background">
-      <AppNav />
-      <div className="flex min-h-[100dvh] min-w-0 flex-1 flex-col pb-16 md:pb-0">
-        <PageTransition>{children}</PageTransition>
+    <EggGate>
+      <div className="flex min-h-[100dvh] bg-background">
+        <AppNav />
+        <div className="flex min-h-[100dvh] min-w-0 flex-1 flex-col pb-16 md:pb-0">
+          <PageTransition>{children}</PageTransition>
+        </div>
+        <AmbientPlayer />
+        <RitualModal />
+        <TutorialGate hasSeenTutorial={user.hasSeenTutorial} />
       </div>
-      <AmbientPlayer />
-      <RitualModal />
-      <TutorialGate hasSeenTutorial={user.hasSeenTutorial} />
-    </div>
+    </EggGate>
   );
 }

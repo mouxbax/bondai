@@ -7,15 +7,14 @@ import { AIAHOrb } from "@/components/companion/AIAHOrb";
 import { useMood } from "@/lib/mood-context";
 import { MoodSelector } from "@/components/dashboard/MoodSelector";
 import { LifeModules } from "@/components/dashboard/LifeModules";
-import { NudgeCards } from "@/components/dashboard/NudgeCards";
+// NudgeCards removed — clean home screen
 import { LevelBadge } from "@/components/gamification/LevelBadge";
 import { LifeScoreRing } from "@/components/gamification/LifeScoreRing";
 import { QuestsList } from "@/components/gamification/QuestsList";
-import { EggHatch } from "@/components/companion/EggHatch";
 import { EvolutionCelebration } from "@/components/companion/EvolutionCelebration";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useEnergy } from "@/hooks/useEnergy";
-import { isEggHatched, getEvolutionInfo, checkEvolution, type EvolutionStage } from "@/lib/evolution";
+import { getEvolutionInfo, checkEvolution, type EvolutionStage } from "@/lib/evolution";
 
 interface CompanionHomeProps {
   firstName?: string | null;
@@ -44,29 +43,15 @@ export function CompanionHome({ firstName }: CompanionHomeProps) {
   const { energy } = useEnergy();
   const [hour, setHour] = useState(12);
   const [line, setLine] = useState("I'm here.");
-  const [showEggHatch, setShowEggHatch] = useState(false);
-  const [hatched, setHatched] = useState(true);
   const [evolutionStage, setEvolutionStage] = useState<EvolutionStage | null>(null);
   const evolutionInfo = getEvolutionInfo();
 
-  // Check if egg needs hatching on mount
+  // Check for evolution on mount
   useEffect(() => {
-    const eggDone = isEggHatched();
-    setHatched(eggDone);
-    if (!eggDone) {
-      setShowEggHatch(true);
-    } else {
-      // Check for evolution
-      const evolved = checkEvolution();
-      if (evolved) {
-        setEvolutionStage(evolved);
-      }
+    const evolved = checkEvolution();
+    if (evolved) {
+      setEvolutionStage(evolved);
     }
-  }, []);
-
-  const handleHatched = useCallback(() => {
-    setHatched(true);
-    setShowEggHatch(false);
   }, []);
 
   useEffect(() => {
@@ -81,13 +66,6 @@ export function CompanionHome({ firstName }: CompanionHomeProps) {
 
   return (
     <>
-      {/* Egg hatching overlay */}
-      <AnimatePresence>
-        {showEggHatch && (
-          <EggHatch onHatched={handleHatched} />
-        )}
-      </AnimatePresence>
-
       {/* Evolution celebration overlay */}
       <AnimatePresence>
         {evolutionStage && (
@@ -132,11 +110,9 @@ export function CompanionHome({ firstName }: CompanionHomeProps) {
             <p className={`text-[10px] tabular-nums ${theme.textMuted}`}>
               {energy <= 0 ? "Sleeping... recharging" : `${energy}% energy`}
             </p>
-            {hatched && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
-                {evolutionInfo.emoji} {evolutionInfo.label}
-              </span>
-            )}
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+              {evolutionInfo.emoji} {evolutionInfo.label}
+            </span>
           </div>
           <motion.div
             initial={{ opacity: 0, y: 8 }}
@@ -211,22 +187,12 @@ export function CompanionHome({ firstName }: CompanionHomeProps) {
           <QuestsList />
         </motion.div>
 
-        {/* Nudges */}
+        {/* Life modules grid */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4, duration: 0.5 }}
         >
-          <NudgeCards />
-        </motion.div>
-
-        {/* Life modules grid */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.45, duration: 0.5 }}
-        >
-          <h2 className={`mb-3 text-sm font-semibold ${theme.text}`}>Your command center</h2>
           <LifeModules />
         </motion.div>
 

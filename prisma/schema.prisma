@@ -108,6 +108,7 @@ model User {
   level               Int       @default(1)       // current level
   companionName       String    @default("Orb")   // pet name for leaderboard display
   evoXp               Int       @default(0)       // evolution XP from feeding
+  eggHatched          Boolean   @default(false)   // true after first-login egg experience
 
   lifeOsProfile      LifeOsProfile?
   weeklyPlans        WeeklyPlan[]
