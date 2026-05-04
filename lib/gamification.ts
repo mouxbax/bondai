@@ -89,6 +89,32 @@ export function getXPState(): XPState {
   return xpToLevel(total);
 }
 
+/**
+ * Hydrate localStorage from server DB — call on app mount.
+ * This ensures mobile and desktop always show the same values.
+ * Server is the source of truth: take whichever is higher.
+ */
+export async function hydrateFromServer(): Promise<XPState | null> {
+  if (typeof window === "undefined") return null;
+  try {
+    const res = await fetch("/api/pet/xp", { cache: "no-store" });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const serverXp = data.xp ?? 0;
+    const localXp = read<number>(KEY_XP, 0);
+    // Take the higher value and sync both directions
+    const authoritative = Math.max(serverXp, localXp);
+    write(KEY_XP, authoritative);
+    // If local was higher, push to server
+    if (localXp > serverXp) {
+      syncXPToServer(localXp);
+    }
+    return xpToLevel(authoritative);
+  } catch {
+    return null;
+  }
+}
+
 export function getXPEvents(): XPEventLog[] {
   return read<XPEventLog[]>(KEY_EVENTS, []);
 }

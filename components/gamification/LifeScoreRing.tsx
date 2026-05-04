@@ -8,8 +8,23 @@ export function LifeScoreRing({ size = 120 }: { size?: number }) {
   const [score, setScore] = useState<LifeScore | null>(null);
 
   useEffect(() => {
+    // Show local score immediately
     setScore(computeLifeScore());
-    const interval = setInterval(() => setScore(computeLifeScore()), 3000);
+    // Then fetch authoritative server score
+    fetch("/api/pet/xp", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.connectionScore != null) {
+          setScore((prev) => {
+            const serverScore = data.connectionScore;
+            // Use whichever is higher between server and local
+            const best = Math.max(serverScore, prev?.total ?? 0);
+            return { ...prev!, total: best };
+          });
+        }
+      })
+      .catch(() => {});
+    const interval = setInterval(() => setScore(computeLifeScore()), 10000);
     return () => clearInterval(interval);
   }, []);
 

@@ -11,6 +11,35 @@ const syncSchema = z.object({
 });
 
 /**
+ * GET /api/pet/xp — fetch authoritative XP/level/score from server.
+ * Used to hydrate the client on load so all devices stay in sync.
+ */
+export async function GET() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { xp: true, level: true, connectionScore: true },
+  });
+
+  if (!user) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  const state = xpToLevel(user.xp);
+
+  return NextResponse.json({
+    xp: user.xp,
+    level: user.level,
+    connectionScore: user.connectionScore,
+    ...state,
+  });
+}
+
+/**
  * POST /api/pet/xp — sync XP from client localStorage to server DB.
  * Called after each awardXP() so leaderboard stays updated.
  */

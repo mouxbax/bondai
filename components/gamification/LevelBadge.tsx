@@ -3,16 +3,20 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Sparkles } from "lucide-react";
-import { getXPState, type XPState } from "@/lib/gamification";
+import { getXPState, hydrateFromServer, type XPState } from "@/lib/gamification";
 
 export function LevelBadge({ compact = false }: { compact?: boolean }) {
   const [state, setState] = useState<XPState | null>(null);
 
   useEffect(() => {
+    // Show local state immediately, then reconcile with server
     setState(getXPState());
+    hydrateFromServer().then((serverState) => {
+      if (serverState) setState(serverState);
+    });
     const handler = () => setState(getXPState());
     window.addEventListener("storage", handler);
-    const interval = setInterval(() => setState(getXPState()), 2000);
+    const interval = setInterval(() => setState(getXPState()), 5000);
     return () => {
       window.removeEventListener("storage", handler);
       clearInterval(interval);
