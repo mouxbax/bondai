@@ -82,6 +82,11 @@ model User {
   lastEnergyUpdate    DateTime  @default(now())   // last time energy was calculated
   lastPlanGeneratedAt DateTime?                   // for 7-day rolling cooldown
 
+  // Referral system
+  referralCode        String?   @unique           // short unique code e.g. "MOUST7X"
+  referredById        String?                     // who referred this user
+  referralRewardClaimed Boolean @default(false)
+
   // Companion mood system
   companionMood       String    @default("happy") // happy, content, lonely, sad
   lastInteraction     DateTime  @default(now())   // last feed/play/visit
@@ -118,6 +123,9 @@ model User {
   receivedGifts      Gift[]         @relation("GiftReceiver")
   nudgesSent         Nudge[]        @relation("NudgeSender")
   nudgesReceived     Nudge[]        @relation("NudgeReceiver")
+  friendshipsA       Friendship[]   @relation("FriendA")
+  friendshipsB       Friendship[]   @relation("FriendB")
+  activities         ActivityLog[]
 
   @@index([subscriptionStatus])
   @@index([stripeCustomerId])
@@ -413,4 +421,35 @@ model Nudge {
   receiver User @relation("NudgeReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
 
   @@index([receiverId, createdAt])
+}
+
+/// Friendships — bidirectional, userA.id < userB.id to prevent duplicates
+model Friendship {
+  id        String   @id @default(cuid())
+  userAId   String
+  userBId   String
+  status    String   @default("pending") // pending, accepted, blocked
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userA User @relation("FriendA", fields: [userAId], references: [id], onDelete: Cascade)
+  userB User @relation("FriendB", fields: [userBId], references: [id], onDelete: Cascade)
+
+  @@unique([userAId, userBId])
+  @@index([userBId, status])
+}
+
+/// Activity log for social feed — records notable user actions
+model ActivityLog {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String   // streak, evolution, achievement, goal_completed, level_up, gift_sent
+  title     String
+  detail    String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
 }

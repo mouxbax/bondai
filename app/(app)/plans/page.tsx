@@ -28,6 +28,9 @@ import { useMood } from "@/lib/mood-context";
 import { LifeOsForm } from "@/components/life-os/LifeOsForm";
 import type { LifeOsData } from "@/lib/life-os/types";
 import { WeekProgress } from "@/components/life-os/WeekProgress";
+import { ExportPlanButton } from "@/components/life-os/ExportPlanButton";
+import { HabitTracker } from "@/components/life-os/HabitTracker";
+import { MiniJournal } from "@/components/life-os/MiniJournal";
 
 // ─── Sub-page grid tiles ─────────────────────────────────────────────
 const planTiles = [
@@ -294,32 +297,41 @@ export default function LifeOsHubPage() {
                     </li>
                   ))}
                 </ol>
-              </motion.section>
+                </div>
+              <ExportPlanButton data={plan} />
+            </motion.section>
             )}
 
-            {/* ─── DAILY HABITS ────────────────────────────────── */}
-            {plan.keyHabits && plan.keyHabits.length > 0 && (
-              <motion.section
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.15 }}
-              >
-                <div className="flex items-center gap-1.5 mb-2">
-                  <Flame className="h-4 w-4 text-orange-500" />
-                  <h2 className={`text-xs font-semibold uppercase tracking-wider ${theme.textMuted}`}>
-                    Daily habits
-                  </h2>
-                </div>
-                <div className="rounded-xl border border-stone-200 dark:border-stone-800 bg-white/60 dark:bg-white/[0.03] divide-y divide-stone-100 dark:divide-stone-800">
-                  {plan.keyHabits.map((h, i) => (
-                    <div key={i} className="flex items-center gap-3 px-4 py-2.5">
-                      <span className="text-emerald-500 text-sm">◇</span>
-                      <span className={`text-sm ${theme.text}`}>{h}</span>
-                    </div>
-                  ))}
-                </div>
-              </motion.section>
-            )}
+            {/* ─── HABIT TRACKER ──────────────────────────────── */}
+            <motion.section
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+            >
+              <div className="flex items-center gap-1.5 mb-3">
+                <Flame className="h-4 w-4 text-orange-500" />
+                <h2 className={`text-xs font-semibold uppercase tracking-wider ${theme.textMuted}`}>
+                  Habit tracker
+                </h2>
+              </div>
+              <div className="rounded-xl border border-stone-200 dark:border-stone-800 bg-white/60 dark:bg-white/[0.03] p-4">
+                <HabitTracker />
+              </div>
+            </motion.section>
+
+            {/* ─── MINI JOURNAL ───────────────────────────────── */}
+            <motion.section
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.18 }}
+            >
+              <h2 className={`text-xs font-semibold uppercase tracking-wider mb-3 ${theme.textMuted}`}>
+                Journal
+              </h2>
+              <div className="rounded-xl border border-stone-200 dark:border-stone-800 bg-white/60 dark:bg-white/[0.03] p-4">
+                <MiniJournal />
+              </div>
+            </motion.section>
 
             {/* ─── WARNINGS ───────────────────────────────────── */}
             {plan.warnings && plan.warnings.length > 0 && (
@@ -346,7 +358,7 @@ export default function LifeOsHubPage() {
         <motion.section
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
+          transition={{ delay: 0.32 }}
         >
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {planTiles.map((tile, i) => {

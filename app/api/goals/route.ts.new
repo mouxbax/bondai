@@ -1,0 +1,137 @@
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { auth } from "@/auth";
+import { prisma } from "@/lib/db/prisma";
+
+const createSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().min(1),
+  targetDate: z.string().datetime().optional(),
+});
+
+const updateSchema = z.object({
+  status: z.enum(["ACTIVE", "COMPLETED", "ABANDONED"]).optional(),
+  title: z.string().min(1).optional(),
+  description: z.string().min(1).optional(),
+  targetDate: z.string().datetime().optional(),
+});
+
+export async function GET(): Promise<Response> {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const goals = await prisma.socialGoal.findMany({
+      where: { userId: session.user.id },
+      orderBy: { createdAt: "desc" },
+    });
+    return NextResponse.json({ goals });
+  } catch (error) {
+    console.error("Goals fetch error:", error);
+    return NextResponse.json({ error: "Failed to fetch goals" }, { status: 500 });
+  }
+}
+
+export async function POST(req: Request): Promise<Response> {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const json = await req.json().catch(() => null);
+    const parsed = createSchema.safeParse(json);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Invalid body" }, { status: 400 });
+    }
+
+    const goal = await prisma.socialGoal.create({
+      data: {
+        userId: session.user.id,
+        title: parsed.data.title,
+        description: parsed.data.description,
+        targetDate: parsed.data.targetDate ? new Date(parsed.data.targetDate) : null,
+      },
+    });
+
+    return NextResponse.json({ goal });
+  } catch (error) {
+    console.error("Goal creation error:", error);
+    return NextResponse.json({ error: "Failed to create goal" }, { status: 500 });
+  }
+}
+
+export async function PATCH(req: Request): Promise<Response> {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const url = new URL(req.url);
+    const goalId = url.pathname.split("/").pop();
+
+    if (!goalId) {
+      return NextResponse.json({ error: "Goal ID required" }, { status: 400 });
+    }
+
+    const json = await req.json().catch(() => null);
+    const parsed = updateSchema.safeParse(json);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Invalid body" }, { status: 400 });
+    }
+
+    // Verify ownership
+    const goal = await prisma.socialGoal.findUnique({ where: { id: goalId } });
+    if (!goal || goal.userId !== session.user.id) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    const updated = await prisma.socialGoal.update({
+      where: { id: goalId },
+      data: {
+        ...(parsed.data.status && { status: parsed.data.status }),
+        ...(parsed.data.title && { title: parsed.data.title }),
+        ...(parsed.data.description && { description: parsed.data.description }),
+        ...(parsed.data.targetDate && { targetDate: new Date(parsed.data.targetDate) }),
+        ...(parsed.data.status === "COMPLETED" && { completedAt: new Date() }),
+      },
+    });
+
+    return NextResponse.json({ goal: updated });
+  } catch (error) {
+    console.error("Goal update error:", error);
+    return NextResponse.json({ error: "Failed to update goal" }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: Request): Promise<Response> {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const url = new URL(req.url);
+    const goalId = url.pathname.split("/").pop();
+
+    if (!goalId) {
+      return NextResponse.json({ error: "Goal ID required" }, { status: 400 });
+    }
+
+    // Verify ownership
+    const goal = await prisma.socialGoal.findUnique({ where: { id: goalId } });
+    if (!goal || goal.userId !== session.user.id) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    await prisma.socialGoal.delete({ where: { id: goalId } });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Goal delete error:", error);
+    return NextResponse.json({ error: "Failed to delete goal" }, { status: 500 });
+  }
+}

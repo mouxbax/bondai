@@ -8,6 +8,9 @@ const withPwa = withPWA({
   // Our push notification handler lives in worker/index.js and gets
   // bundled into the generated service worker automatically.
   customWorkerDir: "worker",
+  fallbacks: {
+    document: "/offline.html",
+  },
 });
 
 /** @type {import('next').NextConfig} */

@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { NotificationSettings } from "@/components/account/NotificationSettings";
+import { ReferralCard } from "@/components/social/ReferralCard";
 import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 
 type AccountData = {
@@ -424,6 +425,19 @@ export function AccountClient() {
         </CardHeader>
         <CardContent>
           <LanguageSwitcher />
+        </CardContent>
+      </Card>
+
+      {/* --- Referral --- */}
+      <Card className="rounded-2xl border-stone-200 dark:border-stone-800">
+        <CardHeader>
+          <CardTitle>Invite Friends</CardTitle>
+          <CardDescription>
+            Share your code and both of you earn coins
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ReferralCard />
         </CardContent>
       </Card>
 

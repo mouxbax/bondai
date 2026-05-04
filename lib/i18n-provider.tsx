@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
-export type Locale = "en" | "fr";
+export type Locale = "en" | "fr" | "ar";
 
 interface LocaleContextType {
   locale: Locale;
@@ -17,17 +17,20 @@ const LocaleContext = createContext<LocaleContextType | undefined>(undefined);
 let translations: Record<Locale, Record<string, any>> = {
   en: {},
   fr: {},
+  ar: {},
 };
 
 // Initialize translations
 async function loadTranslations() {
   try {
-    const [enModule, frModule] = await Promise.all([
+    const [enModule, frModule, arModule] = await Promise.all([
       import("@/locales/en.json"),
       import("@/locales/fr.json"),
+      import("@/locales/ar.json"),
     ]);
     translations.en = enModule.default;
     translations.fr = frModule.default;
+    translations.ar = arModule.default;
   } catch (error) {
     console.error("Failed to load translations:", error);
   }
@@ -88,19 +91,21 @@ export function LocaleProvider({ children }: LocaleProviderProps) {
 
     let initialLocale: Locale = "en";
 
-    if (storedLocale === "en" || storedLocale === "fr") {
-      initialLocale = storedLocale;
-    } else if (cookieLocale === "en" || cookieLocale === "fr") {
-      initialLocale = cookieLocale;
+    const validLocales: Locale[] = ["en", "fr", "ar"];
+    if (storedLocale && validLocales.includes(storedLocale as Locale)) {
+      initialLocale = storedLocale as Locale;
+    } else if (cookieLocale && validLocales.includes(cookieLocale as Locale)) {
+      initialLocale = cookieLocale as Locale;
     } else {
       // Detect browser language
       const browserLang = navigator.language.split("-")[0];
-      initialLocale = browserLang === "fr" ? "fr" : "en";
+      initialLocale = browserLang === "fr" ? "fr" : browserLang === "ar" ? "ar" : "en";
     }
 
     setLocale(initialLocale);
     localStorage.setItem("aiah-locale", initialLocale);
     document.documentElement.lang = initialLocale;
+    document.documentElement.dir = initialLocale === "ar" ? "rtl" : "ltr";
     document.cookie = `aiah-locale=${initialLocale}; path=/; max-age=31536000`;
   }, []);
 
@@ -108,6 +113,7 @@ export function LocaleProvider({ children }: LocaleProviderProps) {
     setLocale(newLocale);
     localStorage.setItem("aiah-locale", newLocale);
     document.documentElement.lang = newLocale;
+    document.documentElement.dir = newLocale === "ar" ? "rtl" : "ltr";
     document.cookie = `aiah-locale=${newLocale}; path=/; max-age=31536000`;
     // Dispatch custom event so components can react to locale change
     window.dispatchEvent(
