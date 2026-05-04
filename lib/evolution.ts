@@ -127,6 +127,10 @@ export function getEvoXP(): number {
   return read<number>(KEY_EVO_XP, 0);
 }
 
+export function setEvoXP(value: number): void {
+  write(KEY_EVO_XP, value);
+}
+
 export function addEvoXP(amount: number): number {
   const current = getEvoXP();
   const next = current + amount;
@@ -136,6 +140,35 @@ export function addEvoXP(amount: number): number {
   syncEvoXPToServer(next);
 
   return next;
+}
+
+/**
+ * Fetch EvoXP + account age from server and seed localStorage.
+ * Server DB is the source of truth — local is just a cache.
+ */
+export async function syncEvoXPFromServer(): Promise<{ evoXp: number; accountCreated: string } | null> {
+  if (typeof window === "undefined") return null;
+  try {
+    const res = await fetch("/api/pet/evo-xp");
+    if (!res.ok) return null;
+    const data = await res.json();
+
+    // Server value wins — it's the source of truth
+    const serverXP = data.evoXp ?? 0;
+    const localXP = getEvoXP();
+    // Use whichever is higher (handles edge case where local has un-synced feeds)
+    const bestXP = Math.max(serverXP, localXP);
+    write(KEY_EVO_XP, bestXP);
+
+    // Seed account creation date from server
+    if (data.accountCreated) {
+      write(KEY_ACCOUNT_CREATED, data.accountCreated);
+    }
+
+    return { evoXp: bestXP, accountCreated: data.accountCreated };
+  } catch {
+    return null;
+  }
 }
 
 /** Fire-and-forget sync to server DB */

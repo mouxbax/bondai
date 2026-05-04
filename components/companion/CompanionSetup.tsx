@@ -19,7 +19,7 @@ import { CompanionInventory } from "@/components/companion/CompanionInventory";
 import { ProfileCard } from "@/components/companion/ProfileCard";
 import { MoodBadge } from "@/components/companion/MoodBadge";
 import { GiftInbox } from "@/components/companion/GiftInbox";
-import { getEvolutionInfo } from "@/lib/evolution";
+import { getEvolutionInfo, syncEvoXPFromServer, type EvolutionInfo } from "@/lib/evolution";
 import { sfx } from "@/lib/sfx";
 import { haptic } from "@/lib/haptics";
 import type { OrbMood } from "@/components/companion/AIAHOrb";
@@ -31,6 +31,9 @@ export function CompanionSetup() {
   const [savedFlash, setSavedFlash] = useState<string | null>(null);
   const [editingName, setEditingName] = useState(false);
   const [draftName, setDraftName] = useState("");
+  const [evo, setEvo] = useState<EvolutionInfo | null>(null);
+
+  const refreshEvo = () => setEvo(getEvolutionInfo());
 
   useEffect(() => {
     const c = getCompanionConfig();
@@ -38,6 +41,11 @@ export function CompanionSetup() {
     setDraftName(c.name);
     // Record interaction (visiting = caring for companion, improves mood)
     fetch("/api/pet/mood", { method: "POST" }).catch(() => {});
+
+    // Sync EvoXP from server (DB is source of truth), then read evo info
+    syncEvoXPFromServer().then(() => {
+      refreshEvo();
+    });
   }, []);
 
   const persist = (patch: Partial<CompanionConfig>, flashLabel?: string) => {
@@ -56,9 +64,7 @@ export function CompanionSetup() {
     setEditingName(false);
   };
 
-  if (!config) return null;
-
-  const evo = getEvolutionInfo();
+  if (!config || !evo) return null;
 
   return (
     <div className={`relative flex flex-1 flex-col overflow-y-auto bg-gradient-to-b ${theme.bgFrom} ${theme.bgTo}`}>
@@ -156,6 +162,8 @@ export function CompanionSetup() {
                 setMood(newMood);
                 sfx.purr();
                 haptic("success");
+                // Refresh evolution info after feeding (EvoXP changed)
+                refreshEvo();
               }}
             />
             {/* Gift inbox */}
