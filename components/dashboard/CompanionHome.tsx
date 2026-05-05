@@ -56,8 +56,8 @@ export function CompanionHome({ firstName }: CompanionHomeProps) {
     mood,
     streakCount: currentStreak,
     energyPercent: energy,
-    xpLevel: evolutionInfo.currentStageIndex + 1,
-    evolutionStage: evolutionInfo.currentStage.id,
+    xpLevel: evolutionInfo.stageIndex + 1,
+    evolutionStage: evolutionInfo.stage,
   });
 
   // Check for evolution on mount

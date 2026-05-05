@@ -26,7 +26,7 @@ export async function logActivity(
         type,
         title,
         detail: detail ?? null,
-        metadata: metadata ?? undefined,
+        metadata: metadata ? (metadata as Record<string, string | number | boolean | null>) : undefined,
       },
     });
   } catch (e) {

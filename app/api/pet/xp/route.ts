@@ -33,7 +33,6 @@ export async function GET() {
 
   return NextResponse.json({
     xp: user.xp,
-    level: user.level,
     connectionScore: user.connectionScore,
     ...state,
   });

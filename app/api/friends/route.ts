@@ -29,16 +29,16 @@ export async function GET() {
     .filter((f) => f.status === "accepted")
     .map((f) => {
       const friend = f.userAId === uid ? f.userB : f.userA;
-      return { id: f.id, friendshipId: f.id, ...friend };
+      return { friendshipId: f.id, userId: friend.id, name: friend.name, image: friend.image, xp: friend.xp, level: friend.level, companionName: friend.companionName, companionMood: friend.companionMood };
     });
 
   const pendingIncoming = friendships
     .filter((f) => f.status === "pending" && f.userAId !== uid)
-    .map((f) => ({ id: f.id, friendshipId: f.id, ...f.userA }));
+    .map((f) => ({ friendshipId: f.id, userId: f.userA.id, name: f.userA.name, image: f.userA.image, xp: f.userA.xp, level: f.userA.level, companionName: f.userA.companionName, companionMood: f.userA.companionMood }));
 
   const pendingSent = friendships
     .filter((f) => f.status === "pending" && f.userAId === uid)
-    .map((f) => ({ id: f.id, friendshipId: f.id, ...f.userB }));
+    .map((f) => ({ friendshipId: f.id, userId: f.userB.id, name: f.userB.name, image: f.userB.image, xp: f.userB.xp, level: f.userB.level, companionName: f.userB.companionName, companionMood: f.userB.companionMood }));
 
   return NextResponse.json({ friends, pendingIncoming, pendingSent });
 }
