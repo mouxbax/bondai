@@ -3,6 +3,8 @@ import type Stripe from 'stripe';
 import stripe from '@/lib/stripe';
 import { prisma } from '@/lib/db/prisma';
 
+export const dynamic = "force-dynamic";
+
 export async function POST(request: NextRequest) {
   const body = await request.text();
   const signature = request.headers.get('stripe-signature');

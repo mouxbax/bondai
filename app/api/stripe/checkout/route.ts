@@ -3,6 +3,8 @@ import { auth } from '@/auth';
 import stripe, { PRICE_PLUS, PRICE_CARE_PLUS } from '@/lib/stripe';
 import { prisma } from '@/lib/db/prisma';
 
+export const dynamic = "force-dynamic";
+
 export async function POST(request: NextRequest) {
   try {
     // Check authentication

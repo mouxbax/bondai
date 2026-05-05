@@ -4,6 +4,8 @@ import stripe from '@/lib/stripe';
 import { prisma } from '@/lib/db/prisma';
 import { getCoinPackById, getTotalCoins } from '@/lib/coin-packs';
 
+export const dynamic = "force-dynamic";
+
 export async function POST(request: NextRequest) {
   try {
     // Check authentication

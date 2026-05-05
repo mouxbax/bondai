@@ -3,6 +3,8 @@ import { auth } from '@/auth';
 import stripe from '@/lib/stripe';
 import { prisma } from '@/lib/db/prisma';
 
+export const dynamic = "force-dynamic";
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function POST(_request: NextRequest) {
   try {
