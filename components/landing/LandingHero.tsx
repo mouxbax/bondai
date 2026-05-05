@@ -127,7 +127,8 @@ export function LandingContent() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.5, duration: 0.6 }}
-        className="absolute left-0 right-0 top-0 z-20 mx-auto flex max-w-5xl items-center justify-between px-6 py-6"
+        className="absolute left-0 right-0 top-0 z-20 mx-auto flex max-w-5xl items-center justify-between px-6 py-6 safe-area-top"
+        style={{ paddingTop: "max(1.5rem, env(safe-area-inset-top, 1.5rem))" }}
       >
         <span className="text-lg font-semibold text-emerald-400">AIAH</span>
         <nav className="flex items-center gap-4 text-sm">
@@ -347,7 +348,8 @@ export function LandingContent() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 2, duration: 0.6 }}
-          className="absolute bottom-8 flex flex-col items-center gap-3"
+          className="absolute bottom-0 flex flex-col items-center gap-3 pb-4 safe-area-bottom"
+          style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom, 1rem))" }}
         >
           <div className="flex items-center gap-4 text-xs text-stone-600">
             <Link href="/blog" className="transition-colors hover:text-stone-400">
