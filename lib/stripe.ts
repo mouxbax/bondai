@@ -14,7 +14,7 @@ function getStripe(): Stripe {
 // Proxy: behaves like the old `stripe` default export but initializes lazily
 const stripe = new Proxy({} as Stripe, {
   get(_target, prop) {
-    return (getStripe() as Record<string | symbol, unknown>)[prop];
+    return (getStripe() as unknown as Record<string | symbol, unknown>)[prop];
   },
 });
 
