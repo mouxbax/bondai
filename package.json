@@ -9,13 +9,26 @@
     "lint": "next lint",
     "postinstall": "prisma generate",
     "db:push": "prisma db push",
-    "db:seed": "prisma db seed"
+    "db:seed": "prisma db seed",
+    "native:setup": "bash scripts/setup-native.sh",
+    "native:sync": "npx cap sync",
+    "native:ios": "npx cap open ios",
+    "native:android": "npx cap open android"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
+    "@capacitor/android": "^6.2.1",
+    "@capacitor/cli": "^6.2.1",
+    "@capacitor/core": "^6.2.1",
+    "@capacitor/haptics": "^6.0.3",
+    "@capacitor/ios": "^6.2.1",
+    "@capacitor/keyboard": "^6.0.4",
+    "@capacitor/push-notifications": "^6.0.5",
+    "@capacitor/splash-screen": "^6.0.4",
+    "@capacitor/status-bar": "^6.0.3",
     "@prisma/client": "^5.22.0",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-label": "^2.1.8",

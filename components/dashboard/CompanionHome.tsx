@@ -18,6 +18,7 @@ import { useEffect, useState } from "react";
 import { useEnergy } from "@/hooks/useEnergy";
 import { getEvolutionInfo, checkEvolution, type EvolutionStage } from "@/lib/evolution";
 import { useStreak } from "@/hooks/useStreak";
+import { useLiveActivity } from "@/hooks/useLiveActivity";
 
 interface CompanionHomeProps {
   firstName?: string | null;
@@ -49,6 +50,15 @@ export function CompanionHome({ firstName }: CompanionHomeProps) {
   const [line, setLine] = useState("I'm here.");
   const [evolutionStage, setEvolutionStage] = useState<EvolutionStage | null>(null);
   const evolutionInfo = getEvolutionInfo();
+
+  // Dynamic Island — auto-starts on native iOS, no-ops on web
+  useLiveActivity({
+    mood,
+    streakCount: currentStreak,
+    energyPercent: energy,
+    xpLevel: evolutionInfo.currentStageIndex + 1,
+    evolutionStage: evolutionInfo.currentStage.id,
+  });
 
   // Check for evolution on mount
   useEffect(() => {
