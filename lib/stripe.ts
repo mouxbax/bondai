@@ -1,8 +1,21 @@
 import Stripe from 'stripe';
 
-// Initialize Stripe with secret key
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2025-02-24.acacia',
+// Lazy-init Stripe so the build doesn't crash when STRIPE_SECRET_KEY is missing
+let _stripe: Stripe | null = null;
+function getStripe(): Stripe {
+  if (!_stripe) {
+    _stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+      apiVersion: '2025-02-24.acacia',
+    });
+  }
+  return _stripe;
+}
+
+// Proxy: behaves like the old `stripe` default export but initializes lazily
+const stripe = new Proxy({} as Stripe, {
+  get(_target, prop) {
+    return (getStripe() as Record<string | symbol, unknown>)[prop];
+  },
 });
 
 // Price IDs for subscription tiers
