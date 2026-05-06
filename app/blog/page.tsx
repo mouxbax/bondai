@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, Clock, ArrowRight } from "lucide-react";
 import { blogPosts } from "@/lib/blog/posts";
+import { StatusBrand } from "@/components/layout/StatusBrand";
 
 export const metadata: Metadata = {
   title: "Blog | AIAH - Your AI Life System",
@@ -36,7 +37,8 @@ export const metadata: Metadata = {
 
 export default function BlogPage() {
   return (
-    <div className="min-h-[100dvh] bg-background text-stone-800 dark:text-stone-100" style={{ minHeight: "100dvh", minHeight: "-webkit-fill-available" }}>
+    <div className="min-h-[100dvh] bg-background text-stone-800 dark:text-stone-100" style={{ minHeight: "100dvh" }}>
+      <StatusBrand />
       {/* Nav */}
       <header className="mx-auto flex max-w-4xl items-center justify-between px-6 py-6">
         <Link href="/" className="text-lg font-semibold text-emerald-400">

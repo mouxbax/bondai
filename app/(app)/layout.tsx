@@ -10,6 +10,7 @@ import { RitualModal } from "@/components/companion/RitualModal";
 import { AmbientPlayer } from "@/components/companion/AmbientPlayer";
 import { TutorialGate } from "@/components/tutorial/TutorialGate";
 import { EggGate } from "@/components/companion/EggGate";
+import { StatusBrand } from "@/components/layout/StatusBrand";
 
 export const metadata: Metadata = {
   robots: "noindex, nofollow",
@@ -64,6 +65,7 @@ export default async function AppShellLayout({ children }: { children: React.Rea
   if (!hasActiveSub) {
     return (
       <div className="min-h-[100dvh] bg-background">
+        <StatusBrand />
         {children}
       </div>
     );
@@ -71,6 +73,7 @@ export default async function AppShellLayout({ children }: { children: React.Rea
 
   return (
     <EggGate>
+      <StatusBrand />
       <div className="flex min-h-[100dvh] bg-background">
         <AppNav />
         <div className="flex min-h-[100dvh] min-w-0 flex-1 flex-col pb-16 md:pb-0">

@@ -57,7 +57,7 @@ export default async function LandingPage() {
   }
 
   return (
-    <div className="min-h-[100dvh] bg-background text-stone-900 dark:text-stone-50 overflow-hidden" style={{ minHeight: "100dvh", minHeight: "-webkit-fill-available" }}>
+    <div className="min-h-[100dvh] bg-background text-stone-900 dark:text-stone-50 overflow-hidden" style={{ minHeight: "100dvh" }}>
       <OrganizationSchema />
       <WebSiteSchema />
       <LandingContent />

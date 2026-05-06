@@ -5,6 +5,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { AIAHOrb, type OrbMood } from "@/components/companion/AIAHOrb";
+import { StatusBrand } from "@/components/layout/StatusBrand";
 
 const ORB_QUOTES = [
   "What if your goals had a system behind them?",
@@ -122,6 +123,9 @@ export function LandingContent() {
 
   return (
     <>
+      {/* Status bar brand — Dynamic Island area */}
+      <StatusBrand />
+
       {/* Nav */}
       <motion.header
         initial={{ opacity: 0 }}
@@ -142,7 +146,7 @@ export function LandingContent() {
       </motion.header>
 
       {/* Full-screen orb experience */}
-      <div className="relative flex min-h-[100dvh] flex-col items-center justify-center px-6" style={{ minHeight: "100dvh", minHeight: "-webkit-fill-available" }}>
+      <div className="relative flex min-h-[100dvh] flex-col items-center justify-center px-6" style={{ minHeight: "100dvh" }}>
         {/* Ambient glow — radial gradient to avoid square blur artifacts */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <motion.div

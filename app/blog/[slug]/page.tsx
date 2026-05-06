@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight, Clock } from "lucide-react";
 import { blogPosts, getPostBySlug, getAllSlugs } from "@/lib/blog/posts";
+import { StatusBrand } from "@/components/layout/StatusBrand";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -155,7 +156,8 @@ export default async function BlogPostPage({ params }: Props) {
   });
 
   return (
-    <div className="min-h-[100dvh] bg-background text-stone-800 dark:text-stone-100" style={{ minHeight: "100dvh", minHeight: "-webkit-fill-available" }}>
+    <div className="min-h-[100dvh] bg-background text-stone-800 dark:text-stone-100" style={{ minHeight: "100dvh" }}>
+      <StatusBrand />
       <ArticleJsonLd post={post} />
 
       {/* Nav */}
