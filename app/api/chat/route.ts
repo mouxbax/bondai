@@ -12,7 +12,6 @@ import { countUserMessagesInConversation, getConversationForUser } from "@/lib/d
 import { logCrisisEvent } from "@/lib/db/queries/crisis-log";
 import { addConnectionEvent } from "@/lib/db/queries/score";
 import { startOfNextUtcDay, startOfUtcDay } from "@/lib/utils";
-import type { CrisisPayload } from "@/types";
 import type { EmotionTag } from "@prisma/client";
 
 const bodySchema = z.object({

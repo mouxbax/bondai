@@ -2,7 +2,7 @@
 
 import { useRef, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Share2, Check, Sparkles, Instagram, Download } from "lucide-react";
+import { Share2, Check, Sparkles, Download } from "lucide-react";
 import { AIAHOrb } from "@/components/companion/AIAHOrb";
 import { getXPState, hydrateFromServer } from "@/lib/gamification";
 import { getEvolutionInfo, syncEvoXPFromServer } from "@/lib/evolution";
