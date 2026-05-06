@@ -2,12 +2,19 @@
 
 export type CompanionVibe = "calm_coach" | "hype_friend" | "tender_listener" | "sharp_strategist" | "playful_spark";
 
+export type EyeStyle = "default" | "round" | "cat" | "star" | "heart" | "wink" | "sleek";
+export type MouthStyle = "default" | "smile" | "cat" | "fangs" | "wide" | "dot" | "smirk";
+
 export interface CompanionConfig {
   name: string;
   vibe: CompanionVibe;
   soundEnabled: boolean;
   ambientSound: "none" | "rain" | "ocean" | "lofi" | "forest";
   setupComplete: boolean;
+  /** Unlocked at Level 5 */
+  eyeStyle: EyeStyle;
+  /** Unlocked at Level 10 */
+  mouthStyle: MouthStyle;
 }
 
 export const VIBES: Record<CompanionVibe, { label: string; desc: string; emoji: string }> = {
@@ -46,6 +53,8 @@ const DEFAULT: CompanionConfig = {
   soundEnabled: true,
   ambientSound: "none",
   setupComplete: false,
+  eyeStyle: "default",
+  mouthStyle: "default",
 };
 
 export function getCompanionConfig(): CompanionConfig {

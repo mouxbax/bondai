@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { sfx } from "@/lib/sfx";
 import { haptic, stopPurr } from "@/lib/haptics";
-import { getCompanionConfig } from "@/lib/companion-config";
+import { getCompanionConfig, type EyeStyle, type MouthStyle } from "@/lib/companion-config";
+import { OrbEquipOverlay, type EquipOverlayItem } from "@/components/companion/OrbEquipOverlay";
 
 export type OrbMood = "calm" | "happy" | "anxious" | "sad" | "focused" | "energetic" | "tender" | "shy" | "dizzy";
 
@@ -18,6 +19,12 @@ interface AIAHOrbProps {
   showFace?: boolean;
   onClick?: () => void;
   onMoodChange?: (mood: OrbMood) => void;
+  /** Equipped items to render visually on the orb */
+  equippedItems?: EquipOverlayItem[];
+  /** Custom eye style (unlocked at Level 5) */
+  eyeStyle?: EyeStyle;
+  /** Custom mouth style (unlocked at Level 10) */
+  mouthStyle?: MouthStyle;
 }
 
 const moodConfig: Record<OrbMood, {
@@ -42,11 +49,15 @@ function KawaiiFace({
   speaking = false,
   mood,
   pupilOffset,
+  eyeStyle = "default",
+  mouthStyle = "default",
 }: {
   energy: number;
   speaking: boolean;
   mood: OrbMood;
   pupilOffset: { x: number; y: number }; // -1 to 1 range
+  eyeStyle?: EyeStyle;
+  mouthStyle?: MouthStyle;
 }) {
   const [blinking, setBlinking] = useState(false);
 
@@ -108,46 +119,101 @@ function KawaiiFace({
     );
   }
 
+  // ─── Custom eye renderer ──────────────────────────────
+  const renderEye = (cx: number, isLeft: boolean) => {
+    const spiralDir = isLeft ? 360 : -360;
+    const blinkPath = isLeft
+      ? "M74 92 Q83 97 92 92"
+      : "M108 92 Q117 97 126 92";
+    const spiralPath = isLeft
+      ? "M83 88 Q86 90 83 92 Q80 94 83 96"
+      : "M117 88 Q120 90 117 92 Q114 94 117 96";
+
+    if (blinking) {
+      return <path d={blinkPath} fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" />;
+    }
+    if (mood === "dizzy") {
+      return (
+        <g>
+          <circle cx={cx} cy={92} r={eyeRadius} fill="white" opacity="0.95" />
+          <motion.g animate={{ rotate: [0, spiralDir] }} transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }} style={{ transformOrigin: `${cx}px 92px` }}>
+            <path d={spiralPath} fill="none" stroke="#0b1210" strokeWidth="1.5" strokeLinecap="round" />
+          </motion.g>
+        </g>
+      );
+    }
+
+    // Custom eye styles
+    switch (eyeStyle) {
+      case "cat":
+        return (
+          <g>
+            <ellipse cx={cx} cy={92} rx={eyeRadius * 0.75} ry={eyeRadius} fill="white" opacity="0.95" />
+            <ellipse cx={cx + px * 0.7} cy={92 + py} rx={pupilRadius * 0.5} ry={pupilRadius * 1.2} fill="#0b1210" />
+            <circle cx={cx + px * 0.7 - 1} cy={92 + py - 2} r="1.2" fill="white" opacity="0.8" />
+          </g>
+        );
+      case "star":
+        return (
+          <g>
+            <circle cx={cx} cy={92} r={eyeRadius} fill="white" opacity="0.95" />
+            <text x={cx + px * 0.5} y={92 + py + 2} textAnchor="middle" dominantBaseline="central" fontSize="10" fill="#0b1210">★</text>
+          </g>
+        );
+      case "heart":
+        return (
+          <g>
+            <circle cx={cx} cy={92} r={eyeRadius} fill="white" opacity="0.95" />
+            <text x={cx + px * 0.5} y={92 + py + 1.5} textAnchor="middle" dominantBaseline="central" fontSize="9" fill="#EC4899">♥</text>
+          </g>
+        );
+      case "round":
+        return (
+          <g>
+            <circle cx={cx} cy={92} r={eyeRadius + 1} fill="white" opacity="0.95" />
+            <circle cx={cx + px} cy={92 + py} r={pupilRadius + 1} fill="#0b1210" />
+            <circle cx={cx + px - 2} cy={92 + py - 2} r="2" fill="white" opacity="0.9" />
+            <circle cx={cx + px + 1} cy={92 + py + 1} r="1" fill="white" opacity="0.5" />
+          </g>
+        );
+      case "wink":
+        if (!isLeft) {
+          // Right eye winks
+          return <path d={blinkPath.replace("108", "108").replace("126", "126")} fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" />;
+        }
+        return (
+          <g>
+            <circle cx={cx} cy={92} r={eyeRadius} fill="white" opacity="0.95" />
+            <circle cx={cx + px} cy={92 + py} r={pupilRadius} fill="#0b1210" />
+            <circle cx={cx + px - 1.5} cy={92 + py - 1.5} r="1.5" fill="white" opacity="0.8" />
+          </g>
+        );
+      case "sleek":
+        return (
+          <g>
+            <ellipse cx={cx} cy={92} rx={eyeRadius * 1.2} ry={eyeRadius * 0.6} fill="white" opacity="0.95" />
+            <ellipse cx={cx + px} cy={92 + py * 0.5} rx={pupilRadius} ry={pupilRadius * 0.7} fill="#0b1210" />
+            <circle cx={cx + px - 1.5} cy={92 + py * 0.5 - 1} r="1.2" fill="white" opacity="0.8" />
+          </g>
+        );
+      default:
+        // Default round eyes
+        return (
+          <g>
+            <circle cx={cx} cy={92} r={eyeRadius} fill="white" opacity="0.95" />
+            <circle cx={cx + px} cy={92 + py} r={pupilRadius} fill="#0b1210" />
+            <circle cx={cx + px - 1.5} cy={92 + py - 1.5} r="1.5" fill="white" opacity="0.8" />
+          </g>
+        );
+    }
+  };
+
   return (
     <g>
       {/* Left eye */}
-      {blinking ? (
-        <path d="M74 92 Q83 97 92 92" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-      ) : mood === "dizzy" ? (
-        <g>
-          <circle cx="83" cy="92" r={eyeRadius} fill="white" opacity="0.95" />
-          {/* Dizzy spiral */}
-          <motion.g animate={{ rotate: [0, 360] }} transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }} style={{ transformOrigin: "83px 92px" }}>
-            <path d="M83 88 Q86 90 83 92 Q80 94 83 96" fill="none" stroke="#0b1210" strokeWidth="1.5" strokeLinecap="round" />
-          </motion.g>
-        </g>
-      ) : (
-        <g>
-          <circle cx="83" cy="92" r={eyeRadius} fill="white" opacity="0.95" />
-          <circle cx={83 + px} cy={92 + py} r={pupilRadius} fill="#0b1210" />
-          {/* Eye shine */}
-          <circle cx={83 + px - 1.5} cy={92 + py - 1.5} r="1.5" fill="white" opacity="0.8" />
-        </g>
-      )}
+      {renderEye(83, true)}
       {/* Right eye */}
-      {blinking ? (
-        <path d="M108 92 Q117 97 126 92" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-      ) : mood === "dizzy" ? (
-        <g>
-          <circle cx="117" cy="92" r={eyeRadius} fill="white" opacity="0.95" />
-          {/* Dizzy spiral */}
-          <motion.g animate={{ rotate: [0, -360] }} transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }} style={{ transformOrigin: "117px 92px" }}>
-            <path d="M117 88 Q120 90 117 92 Q114 94 117 96" fill="none" stroke="#0b1210" strokeWidth="1.5" strokeLinecap="round" />
-          </motion.g>
-        </g>
-      ) : (
-        <g>
-          <circle cx="117" cy="92" r={eyeRadius} fill="white" opacity="0.95" />
-          <circle cx={117 + px} cy={92 + py} r={pupilRadius} fill="#0b1210" />
-          {/* Eye shine */}
-          <circle cx={117 + px - 1.5} cy={92 + py - 1.5} r="1.5" fill="white" opacity="0.8" />
-        </g>
-      )}
+      {renderEye(117, false)}
 
       {/* Blush cheeks when shy */}
       {mood === "shy" && (
@@ -171,14 +237,34 @@ function KawaiiFace({
           transition={{ duration: 0.4, repeat: Infinity }}
         />
       ) : mood === "shy" ? (
-        // Shy: tiny wavy nervous smile
         <path d="M95 113 Q100 116 105 113" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
       ) : mood === "dizzy" ? (
-        // Dizzy: wobbly open mouth
         <motion.ellipse cx="100" cy="114" rx="4" ry="5" fill="white" opacity="0.6"
           animate={{ cx: [99, 101, 99], ry: [4, 6, 4] }}
           transition={{ duration: 0.8, repeat: Infinity }}
         />
+      ) : mouthStyle === "cat" ? (
+        // Cat mouth: W shape
+        <path d="M90 113 L95 116 L100 112 L105 116 L110 113" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" />
+      ) : mouthStyle === "fangs" ? (
+        // Fangs: smile with two little fangs
+        <g>
+          <path d="M90 110 Q100 120 110 110" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" />
+          <path d="M93 111 L91 116" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+          <path d="M107 111 L109 116" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+        </g>
+      ) : mouthStyle === "wide" ? (
+        // Wide grin
+        <path d="M85 110 Q100 125 115 110" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+      ) : mouthStyle === "dot" ? (
+        // Tiny dot mouth
+        <circle cx="100" cy="114" r="2.5" fill="white" opacity="0.8" />
+      ) : mouthStyle === "smirk" ? (
+        // Asymmetric smirk
+        <path d="M92 113 Q100 113 108 108" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" />
+      ) : mouthStyle === "smile" ? (
+        // Extra happy smile
+        <path d="M88 108 Q100 123 112 108" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" />
       ) : mood === "happy" || mood === "energetic" ? (
         <path d="M90 110 Q100 122 110 110" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" />
       ) : tired ? (
@@ -231,6 +317,9 @@ export function AIAHOrb({
   showFace = true,
   onClick,
   onMoodChange,
+  equippedItems,
+  eyeStyle = "default",
+  mouthStyle = "default",
 }: AIAHOrbProps) {
   // effectiveConfig is derived below after touch state setup
   const id = useMemo(() => `orb-${Math.random().toString(36).slice(2, 9)}`, []);
@@ -555,9 +644,19 @@ export function AIAHOrb({
           <EnergyRing energy={energy} color={effectiveConfig.colors[0]} />
         )}
 
+        {/* Equipped items — background layer (behind face) */}
+        {equippedItems && equippedItems.some(i => i.slot === "background") && (
+          <OrbEquipOverlay items={equippedItems.filter(i => i.slot === "background")} />
+        )}
+
         {/* Kawaii face */}
         {showFace && (
-          <KawaiiFace energy={energy} speaking={speaking} mood={effectiveMood} pupilOffset={pupilOffset} />
+          <KawaiiFace energy={energy} speaking={speaking} mood={effectiveMood} pupilOffset={pupilOffset} eyeStyle={eyeStyle} mouthStyle={mouthStyle} />
+        )}
+
+        {/* Equipped items — foreground layer (hat, glasses, personality badge) */}
+        {equippedItems && equippedItems.some(i => i.slot !== "background") && (
+          <OrbEquipOverlay items={equippedItems.filter(i => i.slot !== "background")} />
         )}
 
         {/* Speaking waveform */}

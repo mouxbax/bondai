@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { getConversationForUser, markConversationRead } from "@/lib/db/queries/conversations";
+import { markConversationRead } from "@/lib/db/queries/conversations";
+import { prisma } from "@/lib/db/prisma";
 
 /**
- * Example:
- * curl http://localhost:3000/api/chat/<conversationId> -H "Cookie: ..."
+ * GET /api/chat/:conversationId — load conversation + messages for the client.
+ * Returns the last 100 messages (enough for scroll-back, fast load).
  */
-
 export async function GET(
   _req: Request,
   context: { params: Promise<{ conversationId: string }> }
@@ -17,12 +17,34 @@ export async function GET(
   }
 
   const { conversationId } = await context.params;
-  const convo = await getConversationForUser(conversationId, session.user.id);
+
+  // Parallel: load conversation metadata + last 100 messages + mark read
+  const [convo, messages] = await Promise.all([
+    prisma.conversation.findFirst({
+      where: { id: conversationId, userId: session.user.id },
+    }),
+    prisma.message.findMany({
+      where: { conversationId },
+      orderBy: { createdAt: "desc" },
+      take: 100,
+      select: {
+        id: true,
+        role: true,
+        content: true,
+        createdAt: true,
+        emotionTag: true,
+        voiceUsed: true,
+      },
+    }),
+    markConversationRead(conversationId, session.user.id),
+  ]);
+
   if (!convo) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  await markConversationRead(conversationId, session.user.id);
+  // Reverse to chronological order
+  messages.reverse();
 
   return NextResponse.json({
     conversation: {
@@ -35,13 +57,6 @@ export async function GET(
       crisisFlaggedAt: convo.crisisFlaggedAt,
       crisisFollowUpDueAt: convo.crisisFollowUpDueAt,
     },
-    messages: convo.messages.map((m) => ({
-      id: m.id,
-      role: m.role,
-      content: m.content,
-      createdAt: m.createdAt,
-      emotionTag: m.emotionTag,
-      voiceUsed: m.voiceUsed,
-    })),
+    messages,
   });
 }

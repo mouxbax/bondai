@@ -25,6 +25,7 @@ interface InventoryItem {
 
 interface CompanionInventoryProps {
   onFed?: (result: { item: string; evoXpGained?: number; moodBoost?: string }) => void;
+  onEquipChange?: () => void;
 }
 
 function getEmoji(icon: string | null): string {
@@ -104,7 +105,7 @@ function TreatCard({
 }
 
 // ─── Closet card (accessory — equip/unequip) ───────────────────────────
-function ClosetCard({ item }: { item: InventoryItem }) {
+function ClosetCard({ item, equipped, onToggle }: { item: InventoryItem; equipped: boolean; onToggle: (item: InventoryItem) => void }) {
   const emoji = getEmoji(item.icon);
   const glow = RARITY_GLOW[item.rarity] ?? RARITY_GLOW.common;
 
@@ -112,9 +113,17 @@ function ClosetCard({ item }: { item: InventoryItem }) {
     <motion.div
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
-      className={`relative flex-shrink-0 rounded-2xl border border-white/[0.08] hover:border-white/[0.15] p-2.5 cursor-pointer select-none bg-gradient-to-br ${glow.bg} ring-2 ${glow.ring} transition-all`}
+      onClick={() => onToggle(item)}
+      className={`relative flex-shrink-0 rounded-2xl border p-2.5 cursor-pointer select-none bg-gradient-to-br ${glow.bg} ring-2 ${glow.ring} transition-all ${
+        equipped ? "border-emerald-400 dark:border-emerald-500/50 shadow-md shadow-emerald-500/20" : "border-white/[0.08] hover:border-white/[0.15]"
+      }`}
       style={{ width: 72 }}
     >
+      {equipped && (
+        <div className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 shadow-sm">
+          <span className="text-[8px] text-white font-bold">ON</span>
+        </div>
+      )}
       <div className="flex flex-col items-center gap-0.5">
         <div className="text-[28px] leading-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.2)]">{emoji}</div>
         <span className="text-[9px] font-medium text-stone-400 text-center leading-tight truncate w-full">
@@ -129,13 +138,14 @@ function ClosetCard({ item }: { item: InventoryItem }) {
 }
 
 // ─── Main component ────────────────────────────────────────────────────
-export function CompanionInventory({ onFed }: CompanionInventoryProps) {
+export function CompanionInventory({ onFed, onEquipChange }: CompanionInventoryProps) {
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [feeding, setFeeding] = useState<string | null>(null);
   const [feedResult, setFeedResult] = useState<string | null>(null);
   const [dragItem, setDragItem] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [equippedSlots, setEquippedSlots] = useState<Record<string, string>>({});
 
   const fetchInventory = useCallback(async () => {
     try {
@@ -148,9 +158,62 @@ export function CompanionInventory({ onFed }: CompanionInventoryProps) {
     }
   }, []);
 
+  const fetchEquipped = useCallback(async () => {
+    try {
+      const res = await fetch("/api/pet/equipped");
+      if (!res.ok) return;
+      const data = await res.json();
+      const map: Record<string, string> = {};
+      for (const e of data.equipped ?? []) {
+        map[e.slot] = e.itemId;
+      }
+      setEquippedSlots(map);
+    } catch {
+      // silent
+    }
+  }, []);
+
   useEffect(() => {
     fetchInventory();
-  }, [fetchInventory]);
+    fetchEquipped();
+  }, [fetchInventory, fetchEquipped]);
+
+  const toggleEquip = useCallback(async (item: InventoryItem) => {
+    // Determine slot from slug
+    const slug = item.slug ?? "";
+    let slot = "hat";
+    if (slug.includes("glasses") || slug.includes("glass")) slot = "glasses";
+    else if (item.category === "BACKGROUND") slot = "background";
+    else if (item.category === "PERSONALITY") slot = "personality";
+
+    const isEquipped = equippedSlots[slot] === item.id;
+
+    try {
+      if (isEquipped) {
+        // Unequip
+        await fetch("/api/shop/equip", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ slot }),
+        });
+        sfx.pop();
+        haptic("tap");
+      } else {
+        // Equip
+        await fetch("/api/shop/equip", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ itemId: item.id, slot }),
+        });
+        sfx.xp();
+        haptic("success");
+      }
+      await fetchEquipped();
+      onEquipChange?.();
+    } catch {
+      // silent
+    }
+  }, [equippedSlots, fetchEquipped, onEquipChange]);
 
   const feedItem = useCallback(async (itemId: string) => {
     setFeeding(itemId);
@@ -356,9 +419,23 @@ export function CompanionInventory({ onFed }: CompanionInventoryProps) {
             </Link>
           </div>
           <div className="flex gap-2 flex-wrap justify-center">
-            {closetItems.map((item) => (
-              <ClosetCard key={item.id} item={item} />
-            ))}
+            {closetItems.map((item) => {
+              // Determine slot
+              const slug = item.slug ?? "";
+              let slot = "hat";
+              if (slug.includes("glasses") || slug.includes("glass")) slot = "glasses";
+              else if (item.category === "BACKGROUND") slot = "background";
+              else if (item.category === "PERSONALITY") slot = "personality";
+              const isEquipped = equippedSlots[slot] === item.id;
+              return (
+                <ClosetCard
+                  key={item.id}
+                  item={item}
+                  equipped={isEquipped}
+                  onToggle={toggleEquip}
+                />
+              );
+            })}
           </div>
         </section>
       )}

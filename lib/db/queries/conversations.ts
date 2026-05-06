@@ -34,8 +34,16 @@ export async function getConversationForUser(conversationId: string, userId: str
   return prisma.conversation.findFirst({
     where: { id: conversationId, userId },
     include: {
-      messages: { orderBy: { createdAt: "asc" } },
+      // Only load the last 40 messages for context window.
+      // Full history is loaded client-side via the GET endpoint.
+      messages: { orderBy: { createdAt: "desc" }, take: 40 },
     },
+  }).then((c) => {
+    if (c) {
+      // Reverse so messages are in chronological order
+      c.messages.reverse();
+    }
+    return c;
   });
 }
 

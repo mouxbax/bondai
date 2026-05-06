@@ -17,8 +17,10 @@ import { CompanionBubble } from "@/components/companion/CompanionBubble";
 import { useEffect, useState } from "react";
 import { useEnergy } from "@/hooks/useEnergy";
 import { getEvolutionInfo, checkEvolution, type EvolutionStage } from "@/lib/evolution";
+import { getCompanionConfig } from "@/lib/companion-config";
 import { useStreak } from "@/hooks/useStreak";
 import { useLiveActivity } from "@/hooks/useLiveActivity";
+import { useEquippedItems } from "@/hooks/useEquippedItems";
 
 interface CompanionHomeProps {
   firstName?: string | null;
@@ -46,6 +48,8 @@ export function CompanionHome({ firstName }: CompanionHomeProps) {
   const { mood, theme, isDay } = useMood();
   const { energy } = useEnergy();
   const { currentStreak } = useStreak();
+  const { items: equippedItems } = useEquippedItems();
+  const companionConfig = getCompanionConfig();
   const [hour, setHour] = useState(12);
   const [line, setLine] = useState("I'm here.");
   const [evolutionStage, setEvolutionStage] = useState<EvolutionStage | null>(null);
@@ -118,7 +122,15 @@ export function CompanionHome({ firstName }: CompanionHomeProps) {
           className="flex flex-col items-center gap-4 pt-4"
         >
           <div data-tutorial="orb">
-            <AIAHOrb mood={mood} size={180} energy={energy} showFace />
+            <AIAHOrb
+              mood={mood}
+              size={180}
+              energy={energy}
+              showFace
+              equippedItems={equippedItems}
+              eyeStyle={companionConfig.eyeStyle}
+              mouthStyle={companionConfig.mouthStyle}
+            />
           </div>
           <div className="flex items-center gap-2">
             <p className={`text-[10px] tabular-nums ${theme.textMuted}`}>

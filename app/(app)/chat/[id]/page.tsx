@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
-import { getConversationForUser } from "@/lib/db/queries/conversations";
+import { prisma } from "@/lib/db/prisma";
 import { ChatRoom } from "@/components/chat/ChatRoom";
 import { Header } from "@/components/layout/Header";
 
@@ -10,7 +10,11 @@ export default async function ChatDetailPage({ params }: { params: Promise<{ id:
   const { id } = await params;
   if (!session?.user?.id) return null;
 
-  const convo = await getConversationForUser(id, session.user.id);
+  // Only fetch metadata — no messages. ChatRoom loads them client-side.
+  const convo = await prisma.conversation.findFirst({
+    where: { id, userId: session.user.id },
+    select: { id: true, title: true, type: true, scenarioId: true },
+  });
   if (!convo) notFound();
 
   return (

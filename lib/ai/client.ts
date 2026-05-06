@@ -6,11 +6,17 @@ const openaiKey = process.env.OPENAI_API_KEY ?? "";
 export const PRIMARY_MODEL = "gpt-4o";
 export const FALLBACK_MODEL = "gpt-4o-mini";
 
+// Singleton — reuse TCP connections, avoid cold-start overhead per call
+let _client: OpenAI | null = null;
+
 export function getOpenAIClient(): OpenAI {
   if (!openaiKey) {
     throw new Error("OPENAI_API_KEY is not set");
   }
-  return new OpenAI({ apiKey: openaiKey });
+  if (!_client) {
+    _client = new OpenAI({ apiKey: openaiKey });
+  }
+  return _client;
 }
 
 export async function chatCompletionJson<T>(

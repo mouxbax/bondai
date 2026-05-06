@@ -20,8 +20,11 @@ import { ProfileCard } from "@/components/companion/ProfileCard";
 import { MoodBadge } from "@/components/companion/MoodBadge";
 import { GiftInbox } from "@/components/companion/GiftInbox";
 import { getEvolutionInfo, syncEvoXPFromServer, type EvolutionInfo } from "@/lib/evolution";
+import { getXPState } from "@/lib/gamification";
 import { sfx } from "@/lib/sfx";
 import { haptic } from "@/lib/haptics";
+import { useEquippedItems } from "@/hooks/useEquippedItems";
+import { EyeMouthCustomizer } from "@/components/companion/EyeMouthCustomizer";
 import type { OrbMood } from "@/components/companion/AIAHOrb";
 
 export function CompanionSetup() {
@@ -32,6 +35,8 @@ export function CompanionSetup() {
   const [editingName, setEditingName] = useState(false);
   const [draftName, setDraftName] = useState("");
   const [evo, setEvo] = useState<EvolutionInfo | null>(null);
+
+  const { items: equippedItems, refresh: refreshEquipped } = useEquippedItems();
 
   const refreshEvo = () => setEvo(getEvolutionInfo());
 
@@ -75,7 +80,14 @@ export function CompanionSetup() {
 
           {/* Left column: Orb + name + evolution */}
           <div className="flex flex-col items-center gap-3 md:sticky md:top-6 shrink-0">
-            <AIAHOrb mood={mood} size={140} energy={energy} />
+            <AIAHOrb
+              mood={mood}
+              size={140}
+              energy={energy}
+              equippedItems={equippedItems}
+              eyeStyle={config.eyeStyle}
+              mouthStyle={config.mouthStyle}
+            />
 
             {/* Name display / edit */}
             {editingName ? (
@@ -162,9 +174,9 @@ export function CompanionSetup() {
                 setMood(newMood);
                 sfx.purr();
                 haptic("success");
-                // Refresh evolution info after feeding (EvoXP changed)
                 refreshEvo();
               }}
+              onEquipChange={refreshEquipped}
             />
             {/* Gift inbox */}
             <div className="mt-5">
@@ -172,6 +184,15 @@ export function CompanionSetup() {
             </div>
           </div>
         </div>
+
+        {/* ─── Eye & Mouth customization (level-gated) ──────────── */}
+        <EyeMouthCustomizer
+          config={config}
+          level={getXPState().level}
+          onSave={persist}
+          themeMuted={theme.textMuted}
+          themeText={theme.text}
+        />
 
         {/* ─── Personality grid (compact squares) ──────────────── */}
         <section className="mt-8">

@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import OpenAI from "openai";
+import { getOpenAIClient } from "@/lib/ai/client";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY ?? "" });
+export const dynamic = "force-dynamic";
 
 export async function POST(req: Request): Promise<Response> {
   const session = await auth();
@@ -17,20 +17,26 @@ export async function POST(req: Request): Promise<Response> {
   }
 
   try {
+    const openai = getOpenAIClient();
     const mp3 = await openai.audio.speech.create({
       model: "tts-1",
       voice: "nova",
       input: text,
-      speed: 1.0,
+      speed: 1.05, // slightly faster for snappier feel
     });
 
-    const buffer = Buffer.from(await mp3.arrayBuffer());
+    // Stream the TTS audio directly instead of buffering the entire response.
+    // This lets the client start playing while bytes are still arriving.
+    const audioStream = mp3.body;
+    if (!audioStream) {
+      return NextResponse.json({ error: "No audio body" }, { status: 500 });
+    }
 
-    return new Response(buffer, {
+    return new Response(audioStream as ReadableStream, {
       headers: {
         "Content-Type": "audio/mpeg",
-        "Content-Length": String(buffer.length),
         "Cache-Control": "no-cache",
+        "Transfer-Encoding": "chunked",
       },
     });
   } catch (err) {

@@ -13,14 +13,7 @@ import { logCrisisEvent } from "@/lib/db/queries/crisis-log";
 import { addConnectionEvent } from "@/lib/db/queries/score";
 import { startOfNextUtcDay, startOfUtcDay } from "@/lib/utils";
 import type { CrisisPayload } from "@/types";
-
-/**
- * Example:
- * curl -N -X POST http://localhost:3000/api/chat \
- *   -H "Content-Type: application/json" \
- *   -H "Cookie: ...session..." \
- *   -d '{"conversationId":"...","content":"Hello","useVoice":false}'
- */
+import type { EmotionTag } from "@prisma/client";
 
 const bodySchema = z.object({
   conversationId: z.string().min(1),
@@ -65,24 +58,22 @@ export async function POST(req: Request): Promise<Response> {
     return NextResponse.json({ error: "content required unless bootstrap" }, { status: 400 });
   }
 
-  const convo = await getConversationForUser(conversationId, session.user.id);
+  // ─── Parallel DB queries (fast) ──────────────────────────────────────
+  const [convo, userRow, userMessages] = await Promise.all([
+    getConversationForUser(conversationId, session.user.id),
+    prisma.user.findUniqueOrThrow({
+      where: { id: session.user.id },
+      include: {
+        streak: true,
+        socialGoals: { where: { status: "ACTIVE" }, take: 8 },
+      },
+    }),
+    countUserMessagesInConversation(conversationId),
+  ]);
+
   if (!convo) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
-
-  const userRow = await prisma.user.findUniqueOrThrow({
-    where: { id: session.user.id },
-    include: {
-      streak: true,
-      socialGoals: { where: { status: "ACTIVE" }, take: 8 },
-    },
-  });
-
-  const recentUserLines = convo.messages.filter((m) => m.role === "USER").map((m) => m.content);
-  const recentAssistant = convo.messages.filter((m) => m.role === "ASSISTANT").slice(-3);
-  const recentHistory = recentAssistant.map((m) => m.content).join("\n---\n");
-
-  const userMessages = await countUserMessagesInConversation(conversationId);
 
   if (bootstrap) {
     if (convo.type !== "DAILY_CHECKIN") {
@@ -93,35 +84,27 @@ export async function POST(req: Request): Promise<Response> {
     }
   }
 
-  let emotionTag: Awaited<ReturnType<typeof detectEmotionFromText>>["emotion"] | null = null;
-  let crisisResult: CrisisPayload = { isCrisis: false, severity: "low", keywords: [] };
-
+  // ─── Save user message IMMEDIATELY (don't block on AI detection) ─────
   if (!bootstrap && trimmed) {
-    crisisResult = await detectCrisisFromText(trimmed);
-    if (crisisResult.isCrisis) {
-      await logCrisisEvent(session.user.id, conversationId, crisisResult);
-      await prisma.conversation.update({
-        where: { id: conversationId },
-        data: {
-          crisisFlaggedAt: new Date(),
-          crisisFollowUpDueAt: startOfNextUtcDay(),
-        },
-      });
-    }
-    const em = await detectEmotionFromText(trimmed);
-    emotionTag = em.emotion;
+    // Use keyword-only heuristic for instant emotion tag — AI refines later
+    const quickEmotion = heuristicEmotion(trimmed) as EmotionTag;
     await prisma.message.create({
       data: {
         conversationId,
         role: "USER",
         content: trimmed,
-        emotionTag: em.emotion,
+        emotionTag: quickEmotion,
         voiceUsed: Boolean(useVoice),
       },
     });
   }
 
+  // ─── Build system prompt (no AI call, pure string construction) ──────
+  const recentUserLines = convo.messages.filter((m) => m.role === "USER").map((m) => m.content);
+  const recentAssistant = convo.messages.filter((m) => m.role === "ASSISTANT").slice(-3);
+  const recentHistory = recentAssistant.map((m) => m.content).join("\n---\n");
   const streakCount = userRow.streak?.currentStreak ?? 0;
+
   const system = buildSystemPrompt({
     type: convo.type,
     userName: userRow.name,
@@ -154,6 +137,7 @@ export async function POST(req: Request): Promise<Response> {
     });
   }
 
+  // ─── START STREAMING IMMEDIATELY — no AI pre-processing ──────────────
   const encoder = new TextEncoder();
   let fullAssistant = "";
 
@@ -172,6 +156,7 @@ export async function POST(req: Request): Promise<Response> {
           controller.close();
           return;
         }
+
         const runStream = async (model: string) => {
           const completion = await client.chat.completions.create({
             model,
@@ -196,6 +181,8 @@ export async function POST(req: Request): Promise<Response> {
           await runStream(useVoice ? PRIMARY_MODEL : FALLBACK_MODEL);
         }
 
+        // ─── Post-stream work (non-blocking from user's perspective) ────
+        // Save assistant message
         await prisma.message.create({
           data: {
             conversationId,
@@ -211,42 +198,90 @@ export async function POST(req: Request): Promise<Response> {
           data: { updatedAt: new Date() },
         });
 
-        // Fire-and-forget memory extraction. Never blocks the reply.
-        if (!bootstrap && trimmed && fullAssistant.length > 0) {
-          void updateMemoryFromTurn({
-            userId: session.user.id,
-            conversationId,
-            userMessage: trimmed,
-            assistantMessage: fullAssistant,
-          }).catch(() => {});
-        }
+        // ─── Deferred AI analysis (crisis + emotion + memory) ──────────
+        // These run AFTER the stream completes so they never delay the user.
+        // All fire-and-forget to avoid blocking the SSE close.
+        if (!bootstrap && trimmed) {
+          // Crisis + emotion in parallel, then handle results
+          void (async () => {
+            try {
+              const [crisisResult, emotionResult] = await Promise.all([
+                detectCrisisFromText(trimmed),
+                detectEmotionFromText(trimmed),
+              ]);
 
-        if (bootstrap && convo.type === "DAILY_CHECKIN" && fullAssistant.length > 0) {
-          const dayStart = startOfUtcDay();
-          const dayEnd = new Date(dayStart);
-          dayEnd.setUTCDate(dayEnd.getUTCDate() + 1);
-          const already = await prisma.connectionEvent.findFirst({
-            where: {
+              // Update the user message with accurate AI emotion
+              await prisma.message.updateMany({
+                where: {
+                  conversationId,
+                  role: "USER",
+                  content: trimmed,
+                },
+                data: { emotionTag: emotionResult.emotion },
+              });
+
+              // Handle crisis if detected
+              if (crisisResult.isCrisis) {
+                await logCrisisEvent(session.user.id, conversationId, crisisResult);
+                await prisma.conversation.update({
+                  where: { id: conversationId },
+                  data: {
+                    crisisFlaggedAt: new Date(),
+                    crisisFollowUpDueAt: startOfNextUtcDay(),
+                  },
+                });
+              }
+            } catch {
+              // Silent — deferred analysis is best-effort
+            }
+          })();
+
+          // Memory extraction — already fire-and-forget
+          if (fullAssistant.length > 0) {
+            void updateMemoryFromTurn({
               userId: session.user.id,
-              type: "DAILY_CHECKIN",
-              createdAt: { gte: dayStart, lt: dayEnd },
-            },
-          });
-          if (!already) {
-            await addConnectionEvent({
-              userId: session.user.id,
-              type: "DAILY_CHECKIN",
-              pointsAwarded: 2,
-              note: "Daily check-in opening",
-            });
+              conversationId,
+              userMessage: trimmed,
+              assistantMessage: fullAssistant,
+            }).catch(() => {});
           }
         }
 
+        // Daily check-in XP
+        if (bootstrap && convo.type === "DAILY_CHECKIN" && fullAssistant.length > 0) {
+          void (async () => {
+            try {
+              const dayStart = startOfUtcDay();
+              const dayEnd = new Date(dayStart);
+              dayEnd.setUTCDate(dayEnd.getUTCDate() + 1);
+              const already = await prisma.connectionEvent.findFirst({
+                where: {
+                  userId: session.user.id,
+                  type: "DAILY_CHECKIN",
+                  createdAt: { gte: dayStart, lt: dayEnd },
+                },
+              });
+              if (!already) {
+                await addConnectionEvent({
+                  userId: session.user.id,
+                  type: "DAILY_CHECKIN",
+                  pointsAwarded: 2,
+                  note: "Daily check-in opening",
+                });
+              }
+            } catch {
+              // silent
+            }
+          })();
+        }
+
+        // Send meta — crisis detection was deferred, so we send
+        // a lightweight signal. Real crisis handling happens async.
         send({
           type: "meta",
           done: true,
-          emotion: emotionTag,
-          crisis: crisisResult.isCrisis ? crisisResult : null,
+          emotion: null,
+          crisis: null,
         });
         controller.close();
       } catch (e) {
@@ -266,4 +301,15 @@ export async function POST(req: Request): Promise<Response> {
       Connection: "keep-alive",
     },
   });
+}
+
+// ─── Fast heuristic emotion (no AI call) ─────────────────────────────
+function heuristicEmotion(text: string): string {
+  const t = text.toLowerCase();
+  if (/\b(love|great|happy|excited|grateful|awesome)\b/.test(t)) return "HAPPY";
+  if (/\b(angry|furious|hate|annoyed)\b/.test(t)) return "ANGRY";
+  if (/\b(anxious|nervous|panic|worried|scared)\b/.test(t)) return "ANXIOUS";
+  if (/\b(lonely|alone|isolated|no friends)\b/.test(t)) return "LONELY";
+  if (/\b(sad|depressed|cry|down|blue)\b/.test(t)) return "SAD";
+  return "NEUTRAL";
 }
