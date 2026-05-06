@@ -32,9 +32,16 @@
   --card-shadow: 0 4px 24px -8px rgba(0, 0, 0, 0.4);
 }
 
-body {
+html, body {
   color: var(--foreground);
   background: var(--background);
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
+}
+
+/* Ensure full viewport coverage on all devices */
+html {
+  height: -webkit-fill-available;
 }
 
 @layer utilities {

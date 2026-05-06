@@ -72,9 +72,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className="h-full" style={{ height: "-webkit-fill-available" }}>
       <head />
-      <body className={`${inter.variable} min-h-[100dvh] font-sans antialiased`}>
+      <body className={`${inter.variable} min-h-[100dvh] font-sans antialiased bg-background`}>
         <Providers>
           <WelcomeSplash />
           {children}

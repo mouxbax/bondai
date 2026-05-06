@@ -142,12 +142,19 @@ export function LandingContent() {
       </motion.header>
 
       {/* Full-screen orb experience */}
-      <div className="relative flex min-h-[100dvh] flex-col items-center justify-center px-6">
-        {/* Ambient glow */}
+      <div className="relative flex min-h-[100dvh] flex-col items-center justify-center px-6" style={{ minHeight: "100dvh", minHeight: "-webkit-fill-available" }}>
+        {/* Ambient glow — radial gradient to avoid square blur artifacts */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <motion.div
-            className="absolute left-1/2 top-1/2 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-20 blur-[120px]"
-            style={{ background: orbMood === "calm" ? "#2dd4a3" : orbMood === "energetic" ? "#fb923c" : orbMood === "focused" ? "#34d399" : "#2dd4a3" }}
+            className="absolute left-1/2 top-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2"
+            style={{
+              background: `radial-gradient(circle, ${
+                orbMood === "calm" ? "rgba(45,212,163,0.25)" :
+                orbMood === "energetic" ? "rgba(251,146,60,0.25)" :
+                orbMood === "focused" ? "rgba(52,211,153,0.25)" :
+                "rgba(45,212,163,0.25)"
+              } 0%, transparent 70%)`,
+            }}
             animate={{ scale: [1, 1.15, 1] }}
             transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
           />
