@@ -142,4 +142,25 @@ export const sfx = {
       { freq: 660, dur: 0.12, delay: 0.08, type: "triangle", gain: 0.11 },
       { freq: 880, dur: 0.18, delay: 0.16, type: "sine", gain: 0.1 },
     ]),
+  /** Tab navigation — ultra-subtle tick */
+  nav: () => play([{ freq: 880, dur: 0.04, delay: 0, type: "sine", gain: 0.06 }]),
+  /** Session start — gentle ascending breath-in cue */
+  sessionStart: () =>
+    play([
+      { freq: 392, dur: 0.2, delay: 0, type: "sine", gain: 0.08 },
+      { freq: 523, dur: 0.25, delay: 0.12, type: "sine", gain: 0.09 },
+      { freq: 659, dur: 0.3, delay: 0.28, type: "sine", gain: 0.07 },
+    ]),
+  /** Session complete — warm resolved chord */
+  sessionComplete: () =>
+    play([
+      { freq: 523, dur: 0.3, delay: 0, type: "sine", gain: 0.1 },
+      { freq: 659, dur: 0.3, delay: 0, type: "sine", gain: 0.08 },
+      { freq: 784, dur: 0.35, delay: 0.1, type: "triangle", gain: 0.1 },
+      { freq: 1047, dur: 0.5, delay: 0.2, type: "sine", gain: 0.07 },
+    ]),
+  /** Toggle on — quick bright tick */
+  toggleOn: () => play([{ freq: 1047, dur: 0.06, delay: 0, type: "sine", gain: 0.08 }]),
+  /** Toggle off — softer lower tick */
+  toggleOff: () => play([{ freq: 523, dur: 0.06, delay: 0, type: "sine", gain: 0.06 }]),
 };

@@ -24,7 +24,7 @@ class LiveActivityPlugin: CAPPlugin, CAPBridgedPlugin {
 
     /// Check if Live Activities are available on this device
     @objc func isAvailable(_ call: CAPPluginCall) {
-        if #available(iOS 16.1, *) {
+        if #available(iOS 16.2, *) {
             call.resolve(["available": ActivityAuthorizationInfo().areActivitiesEnabled])
         } else {
             call.resolve(["available": false])
@@ -33,8 +33,8 @@ class LiveActivityPlugin: CAPPlugin, CAPBridgedPlugin {
 
     /// Start a new Live Activity
     @objc func start(_ call: CAPPluginCall) {
-        guard #available(iOS 16.1, *) else {
-            call.reject("Live Activities require iOS 16.1+")
+        guard #available(iOS 16.2, *) else {
+            call.reject("Live Activities require iOS 16.2+")
             return
         }
 
@@ -77,8 +77,8 @@ class LiveActivityPlugin: CAPPlugin, CAPBridgedPlugin {
 
     /// Update the current Live Activity
     @objc func update(_ call: CAPPluginCall) {
-        guard #available(iOS 16.1, *) else {
-            call.reject("Live Activities require iOS 16.1+")
+        guard #available(iOS 16.2, *) else {
+            call.reject("Live Activities require iOS 16.2+")
             return
         }
 
@@ -107,8 +107,8 @@ class LiveActivityPlugin: CAPPlugin, CAPBridgedPlugin {
 
     /// Stop all AIAH Live Activities
     @objc func stop(_ call: CAPPluginCall) {
-        guard #available(iOS 16.1, *) else {
-            call.reject("Live Activities require iOS 16.1+")
+        guard #available(iOS 16.2, *) else {
+            call.reject("Live Activities require iOS 16.2+")
             return
         }
 

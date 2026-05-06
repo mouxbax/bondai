@@ -7,6 +7,7 @@ import { AIAHOrb } from "@/components/companion/AIAHOrb";
 import { useMood } from "@/lib/mood-context";
 import { awardXP, checkAchievements } from "@/lib/gamification";
 import { startLiveActivity, updateLiveActivity, stopLiveActivity } from "@/lib/live-activity";
+import { sfx } from "@/lib/sfx";
 
 type Phase = "intro" | "inhale" | "hold" | "exhale" | "rest" | "done";
 
@@ -414,6 +415,7 @@ export function BreathingExercise({ open, onClose }: BreathingExerciseProps) {
     setCount(0);
     setPhase("done");
     setFinalQuote(pickEndQuote());
+    sfx.sessionComplete();
     if (soundOn) {
       const ctx = ensureCtx(audioRef);
       if (ctx) {
@@ -533,6 +535,7 @@ export function BreathingExercise({ open, onClose }: BreathingExerciseProps) {
     cleanup();
     cancelledRef.current = false;
     completedRef.current = false;
+    sfx.sessionStart();
     // Unlock audio on user gesture
     ensureCtx(audioRef);
     setCycle(0);

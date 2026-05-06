@@ -165,9 +165,9 @@ export function WeeklyPlanView({ plan, compact }: { plan: WeeklyPlanData; compac
                 onClick={() => toggle(dk)}
                 className="w-full text-left"
               >
-                <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                <CardHeader className="!flex-row !space-y-0 items-center justify-between py-4 px-5">
                   <div className="flex items-center gap-2">
-                    <CardTitle className="text-sm">{DAY_LABEL[dk]}</CardTitle>
+                    <CardTitle className="text-sm leading-none">{DAY_LABEL[dk]}</CardTitle>
                     {isToday && (
                       <Badge className="bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[9px] border-0">
                         Today
