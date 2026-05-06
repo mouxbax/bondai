@@ -229,7 +229,7 @@ export function LandingContent() {
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Your name"
                     maxLength={30}
-                    className="w-48 rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-center text-sm text-stone-100 placeholder-stone-600 outline-none transition-all focus:border-emerald-500/30 focus:bg-white/[0.06]"
+                    className="w-48 rounded-xl border border-stone-300 bg-white/80 px-4 py-2.5 text-center text-sm text-stone-900 placeholder-stone-400 outline-none transition-all focus:border-emerald-500/50 focus:bg-white dark:border-white/[0.08] dark:bg-white/[0.04] dark:text-stone-100 dark:placeholder-stone-600 dark:focus:border-emerald-500/30 dark:focus:bg-white/[0.06]"
                   />
                   <motion.button
                     type="submit"
@@ -293,7 +293,7 @@ export function LandingContent() {
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="Your email"
                         required
-                        className="flex-1 rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-sm text-stone-100 placeholder-stone-600 outline-none transition-all focus:border-emerald-500/30 focus:bg-white/[0.06]"
+                        className="flex-1 rounded-xl border border-stone-300 bg-white/80 px-4 py-2.5 text-sm text-stone-900 placeholder-stone-400 outline-none transition-all focus:border-emerald-500/50 focus:bg-white dark:border-white/[0.08] dark:bg-white/[0.04] dark:text-stone-100 dark:placeholder-stone-600 dark:focus:border-emerald-500/30 dark:focus:bg-white/[0.06]"
                       />
                       <motion.button
                         type="submit"
