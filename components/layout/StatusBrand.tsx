@@ -4,8 +4,8 @@ import { motion } from "framer-motion";
 
 /**
  * StatusBrand — a subtle brand element that lives in the iOS status bar area,
- * centered between the clock (left) and signal/battery (right), just below
- * or around the Dynamic Island. Only visible on mobile in Capacitor.
+ * centered between the clock (left) and signal/battery (right), inside
+ * the Dynamic Island / notch area. Only visible on mobile in Capacitor.
  *
  * It shows "AIAH" with a soft emerald glow pulse, giving the feeling that
  * the Dynamic Island is "powered by" the app.
@@ -14,14 +14,20 @@ export function StatusBrand() {
   return (
     <div
       className="pointer-events-none fixed left-0 right-0 top-0 z-50 flex items-start justify-center md:hidden"
-      style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
+      style={{
+        /* Position halfway into the safe area so it sits at status-bar level
+           (between clock and signal), not below the notch/Dynamic Island.
+           On devices without a notch, safe-area-inset-top is 0 so this
+           collapses to top-[6px] via the max(). */
+        paddingTop: "calc(env(safe-area-inset-top, 0px) / 2 - 4px)",
+      }}
     >
-      {/* The brand pill — sits just below the Dynamic Island */}
+      {/* The brand pill — centered in the status bar row */}
       <motion.div
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1, duration: 0.8, ease: "easeOut" }}
-        className="relative -mt-1 flex items-center gap-1.5"
+        className="relative flex items-center gap-1.5"
       >
         {/* Glow backdrop */}
         <div

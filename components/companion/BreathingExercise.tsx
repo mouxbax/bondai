@@ -120,71 +120,137 @@ function ensureCtx(ctxRef: React.MutableRefObject<AudioContext | null>): AudioCo
 }
 
 /**
- * Start a smooth 4-bar evolving meditation pad.
+ * Start a lush evolving meditation pad with chord progression,
+ * simulated reverb (convolution-style via feedback delays), and
+ * slow-morphing texture. Much richer than a static chord.
  * Returns a stop function.
  */
 function startMeditationPad(ctx: AudioContext, dest: AudioNode): () => void {
+  // Dreamy chord progression: Am7 → Fmaj7 → Cmaj7 → Em7 (each bar ~6s)
   const progression = [
-    [174.61, 207.65, 261.63, 349.23], // Fm
-    [174.61, 207.65, 261.63, 349.23], // Fm
-    [174.61, 207.65, 261.63, 349.23], // Fm
-    [174.61, 207.65, 261.63, 349.23], // Fm
+    [110.00, 164.81, 207.65, 261.63, 329.63], // Am7: A2 E3 G#3 C4 E4
+    [87.31, 130.81, 174.61, 220.00, 329.63],   // Fmaj7: F2 C3 F3 A3 E4
+    [130.81, 164.81, 196.00, 246.94, 329.63],   // Cmaj7: C3 E3 G3 B3 E4
+    [82.41, 123.47, 164.81, 207.65, 293.66],   // Em7: E2 B2 E3 G#3 D4
   ];
-  const barSeconds = 4;
-  const master = ctx.createGain();
-  master.gain.value = 0.18;
-  const filter = ctx.createBiquadFilter();
-  filter.type = "lowpass";
-  filter.frequency.value = 2100;
-  filter.Q.value = 0.5;
-  master.connect(filter);
-  filter.connect(dest);
-
+  const barSeconds = 6;
   const stops: Array<() => void> = [];
+
+  // Master chain: voices → warmth filter → reverb → master gain → dest
+  const master = ctx.createGain();
+  master.gain.value = 0.22;
+
+  const warmth = ctx.createBiquadFilter();
+  warmth.type = "lowpass";
+  warmth.frequency.value = 1800;
+  warmth.Q.value = 0.4;
+
+  // Simulated reverb via parallel feedback delays
+  const reverbMix = ctx.createGain();
+  reverbMix.gain.value = 0.3;
+  const dryMix = ctx.createGain();
+  dryMix.gain.value = 0.7;
+
+  const delays = [0.03, 0.07, 0.11, 0.017].map((t) => {
+    const d = ctx.createDelay(0.2);
+    d.delayTime.value = t;
+    const fb = ctx.createGain();
+    fb.gain.value = 0.3;
+    const filt = ctx.createBiquadFilter();
+    filt.type = "lowpass";
+    filt.frequency.value = 2000;
+    d.connect(filt);
+    filt.connect(fb);
+    fb.connect(d); // feedback loop
+    filt.connect(reverbMix);
+    return { delay: d, fb, filt };
+  });
+
+  warmth.connect(dryMix);
+  delays.forEach((d) => warmth.connect(d.delay));
+  dryMix.connect(master);
+  reverbMix.connect(master);
+  master.connect(dest);
+
+  // Create oscillators for each voice
   const oscillators: OscillatorNode[] = [];
   const voiceGains: GainNode[] = [];
   progression[0].forEach((f, i) => {
     const osc = ctx.createOscillator();
-    osc.type = i === progression[0].length - 1 ? "triangle" : "sine";
+    // Mix wave types for richness: bass=triangle, mid=sine, top=sine
+    osc.type = i < 2 ? "triangle" : "sine";
     osc.frequency.value = f;
-    osc.detune.value = (i - 1.5) * 2;
+    // Slight detune for warmth (chorus effect)
+    osc.detune.value = (i - 2) * 4 + (Math.random() - 0.5) * 3;
+
     const g = ctx.createGain();
-    g.gain.value = i === progression[0].length - 1 ? 0.1 : 0.14;
+    // Lower voices louder for warmth
+    g.gain.value = i < 2 ? 0.12 : 0.08;
+
+    // Slow LFO on each voice for organic movement
     const lfo = ctx.createOscillator();
-    lfo.frequency.value = 0.06 + i * 0.04;
+    lfo.frequency.value = 0.04 + i * 0.025 + Math.random() * 0.01;
     const lfoGain = ctx.createGain();
-    lfoGain.gain.value = 0.05;
+    lfoGain.gain.value = 0.03;
     lfo.connect(lfoGain);
     lfoGain.connect(g.gain);
+
     osc.connect(g);
-    g.connect(master);
+    g.connect(warmth);
     osc.start();
     lfo.start();
-    stops.push(() => {
-      try {
-        osc.stop();
-        lfo.stop();
-      } catch {}
-    });
+    stops.push(() => { try { osc.stop(); lfo.stop(); } catch {} });
     oscillators.push(osc);
     voiceGains.push(g);
   });
 
+  // Sub bass drone for depth
+  const sub = ctx.createOscillator();
+  sub.type = "sine";
+  sub.frequency.value = progression[0][0] / 2; // one octave below root
+  const subGain = ctx.createGain();
+  subGain.gain.value = 0.06;
+  sub.connect(subGain);
+  subGain.connect(warmth);
+  sub.start();
+  stops.push(() => { try { sub.stop(); } catch {} });
+
+  // Slow filter sweep for evolution
+  const sweepLfo = ctx.createOscillator();
+  sweepLfo.frequency.value = 0.02;
+  const sweepGain = ctx.createGain();
+  sweepGain.gain.value = 600;
+  sweepLfo.connect(sweepGain);
+  sweepGain.connect(warmth.frequency);
+  sweepLfo.start();
+  stops.push(() => { try { sweepLfo.stop(); } catch {} });
+
+  // Chord progression loop
   let idx = 0;
   const chordLooper = window.setInterval(() => {
     idx = (idx + 1) % progression.length;
     const next = progression[idx];
     const now = ctx.currentTime;
+    const glide = 2.0; // 2-second smooth glide between chords
+
     oscillators.forEach((osc, i) => {
       osc.frequency.cancelScheduledValues(now);
       osc.frequency.setValueAtTime(osc.frequency.value, now);
-      osc.frequency.linearRampToValueAtTime(next[i], now + 1.3);
+      osc.frequency.linearRampToValueAtTime(next[i], now + glide);
     });
-    voiceGains.forEach((g) => {
+
+    // Glide sub bass to new root
+    sub.frequency.cancelScheduledValues(now);
+    sub.frequency.setValueAtTime(sub.frequency.value, now);
+    sub.frequency.linearRampToValueAtTime(next[0] / 2, now + glide);
+
+    // Gentle swell on chord change
+    voiceGains.forEach((g, i) => {
+      const base = i < 2 ? 0.12 : 0.08;
       g.gain.cancelScheduledValues(now);
       g.gain.setValueAtTime(g.gain.value, now);
-      g.gain.linearRampToValueAtTime(0.16, now + 0.6);
-      g.gain.linearRampToValueAtTime(0.12, now + barSeconds - 0.1);
+      g.gain.linearRampToValueAtTime(base * 1.15, now + 1.0);
+      g.gain.linearRampToValueAtTime(base, now + barSeconds - 0.5);
     });
   }, barSeconds * 1000);
   stops.push(() => window.clearInterval(chordLooper));
@@ -193,7 +259,10 @@ function startMeditationPad(ctx: AudioContext, dest: AudioNode): () => void {
     stops.forEach((s) => s());
     try {
       master.disconnect();
-      filter.disconnect();
+      warmth.disconnect();
+      dryMix.disconnect();
+      reverbMix.disconnect();
+      delays.forEach((d) => { d.delay.disconnect(); d.fb.disconnect(); d.filt.disconnect(); });
     } catch {}
   };
 }

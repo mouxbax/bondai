@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { sfx } from "@/lib/sfx";
-import { haptic } from "@/lib/haptics";
+import { haptic, stopPurr } from "@/lib/haptics";
 import { getCompanionConfig } from "@/lib/companion-config";
 
 export type OrbMood = "calm" | "happy" | "anxious" | "sad" | "focused" | "energetic" | "tender" | "shy" | "dizzy";
@@ -323,10 +323,12 @@ export function AIAHOrb({
       lastTapRef.current = now;
     }
 
-    // Long hold = purr (tender + slow pulse)
+    // Long hold = purr (tender + slow pulse + repeating haptic vibration)
     holdTimerRef.current = setTimeout(() => {
       applyTouchMood("tender", 3000);
       playReaction("purr");
+      // Start the repeating purr haptic (cat purr feel)
+      haptic("purr");
     }, 800);
   }, [energy, applyTouchMood, playReaction]);
 
@@ -346,6 +348,8 @@ export function AIAHOrb({
       clearTimeout(holdTimerRef.current);
       holdTimerRef.current = null;
     }
+    // Stop purr vibration when finger lifts
+    stopPurr();
     // Petting = multiple small moves on the orb
     if (touchMoveCountRef.current >= 5 && touchMoveCountRef.current < 30) {
       applyTouchMood("shy", 2500);
