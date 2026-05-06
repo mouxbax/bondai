@@ -42,8 +42,8 @@ export default function BlogPage() {
         <Link href="/" className="text-lg font-semibold text-emerald-400">
           AIAH
         </Link>
-        <nav className="flex items-center gap-6 text-sm text-stone-400">
-          <Link href="/" className="transition-colors hover:text-stone-200">
+        <nav className="flex items-center gap-6 text-sm text-stone-500 dark:text-stone-400">
+          <Link href="/" className="transition-colors hover:text-stone-700 dark:hover:text-stone-200">
             Home
           </Link>
         </nav>
@@ -54,12 +54,12 @@ export default function BlogPage() {
         <div className="mb-12">
           <Link
             href="/"
-            className="mb-4 inline-flex items-center gap-1.5 text-sm text-stone-500 transition-colors hover:text-stone-300"
+            className="mb-4 inline-flex items-center gap-1.5 text-sm text-stone-500 transition-colors hover:text-stone-700 dark:hover:text-stone-300"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             Back to home
           </Link>
-          <h1 className="text-3xl font-semibold tracking-tight text-stone-50 sm:text-4xl">
+          <h1 className="text-3xl font-semibold tracking-tight text-stone-900 dark:text-stone-50 sm:text-4xl">
             The AIAH blog
           </h1>
           <p className="mt-3 max-w-xl text-base text-stone-400">
@@ -74,12 +74,12 @@ export default function BlogPage() {
             <Link
               key={post.slug}
               href={`/blog/${post.slug}`}
-              className="group rounded-2xl border border-white/[0.06] bg-white/[0.03] p-6 transition-all hover:border-white/[0.12] hover:bg-white/[0.05]"
+              className="group rounded-2xl border border-stone-200 bg-stone-50 p-6 transition-all hover:border-stone-300 hover:bg-stone-100 dark:border-white/[0.06] dark:bg-white/[0.03] dark:hover:border-white/[0.12] dark:hover:bg-white/[0.05]"
             >
               <span className="mb-3 inline-block rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[11px] font-medium text-emerald-400">
                 {post.category}
               </span>
-              <h2 className="mb-2 text-lg font-medium leading-snug text-stone-100 transition-colors group-hover:text-white">
+              <h2 className="mb-2 text-lg font-medium leading-snug text-stone-800 transition-colors group-hover:text-stone-950 dark:text-stone-100 dark:group-hover:text-white">
                 {post.title}
               </h2>
               <p className="mb-4 text-sm leading-relaxed text-stone-400">
@@ -100,8 +100,8 @@ export default function BlogPage() {
         </div>
 
         {/* CTA */}
-        <div className="mt-16 rounded-2xl border border-white/[0.06] bg-white/[0.03] p-8 text-center sm:p-12">
-          <h2 className="mb-3 text-xl font-semibold text-stone-100">
+        <div className="mt-16 rounded-2xl border border-stone-200 bg-stone-50 p-8 text-center dark:border-white/[0.06] dark:bg-white/[0.03] sm:p-12">
+          <h2 className="mb-3 text-xl font-semibold text-stone-800 dark:text-stone-100">
             AIAH is coming soon
           </h2>
           <p className="mx-auto mb-6 max-w-md text-sm text-stone-400">

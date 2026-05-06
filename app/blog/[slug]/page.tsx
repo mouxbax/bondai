@@ -114,7 +114,7 @@ export default async function BlogPostPage({ params }: Props) {
       return (
         <h2
           key={i}
-          className="mb-4 mt-10 text-xl font-semibold text-stone-100"
+          className="mb-4 mt-10 text-xl font-semibold text-stone-800 dark:text-stone-100"
         >
           {trimmed.replace("## ", "")}
         </h2>
@@ -122,7 +122,7 @@ export default async function BlogPostPage({ params }: Props) {
     }
     if (trimmed.startsWith("**") && trimmed.endsWith("**")) {
       return (
-        <p key={i} className="mb-4 font-medium text-stone-200">
+        <p key={i} className="mb-4 font-medium text-stone-700 dark:text-stone-200">
           {trimmed.replace(/\*\*/g, "")}
         </p>
       );
@@ -130,7 +130,7 @@ export default async function BlogPostPage({ params }: Props) {
     if (trimmed.startsWith("- ")) {
       const items = trimmed.split("\n").filter((l) => l.startsWith("- "));
       return (
-        <ul key={i} className="mb-4 ml-4 list-disc space-y-2 text-stone-300">
+        <ul key={i} className="mb-4 ml-4 list-disc space-y-2 text-stone-600 dark:text-stone-300">
           {items.map((item, j) => (
             <li key={j}>{item.replace(/^- /, "").replace(/\*\*/g, "")}</li>
           ))}
@@ -140,10 +140,10 @@ export default async function BlogPostPage({ params }: Props) {
     // Handle inline bold
     const parts = trimmed.split(/(\*\*[^*]+\*\*)/g);
     return (
-      <p key={i} className="mb-4 leading-relaxed text-stone-300">
+      <p key={i} className="mb-4 leading-relaxed text-stone-600 dark:text-stone-300">
         {parts.map((part, j) =>
           part.startsWith("**") && part.endsWith("**") ? (
-            <strong key={j} className="font-medium text-stone-200">
+            <strong key={j} className="font-medium text-stone-800 dark:text-stone-200">
               {part.replace(/\*\*/g, "")}
             </strong>
           ) : (
@@ -163,8 +163,8 @@ export default async function BlogPostPage({ params }: Props) {
         <Link href="/" className="text-lg font-semibold text-emerald-400">
           AIAH
         </Link>
-        <nav className="flex items-center gap-6 text-sm text-stone-400">
-          <Link href="/blog" className="transition-colors hover:text-stone-200">
+        <nav className="flex items-center gap-6 text-sm text-stone-500 dark:text-stone-400">
+          <Link href="/blog" className="transition-colors hover:text-stone-700 dark:hover:text-stone-200">
             Blog
           </Link>
         </nav>
@@ -173,7 +173,7 @@ export default async function BlogPostPage({ params }: Props) {
       <main className="mx-auto max-w-2xl px-6 pb-24 pt-4">
         <Link
           href="/blog"
-          className="mb-8 inline-flex items-center gap-1.5 text-sm text-stone-500 transition-colors hover:text-stone-300"
+          className="mb-8 inline-flex items-center gap-1.5 text-sm text-stone-500 transition-colors hover:text-stone-700 dark:hover:text-stone-300"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           All articles
@@ -183,7 +183,7 @@ export default async function BlogPostPage({ params }: Props) {
           <span className="mb-4 inline-block rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[11px] font-medium text-emerald-400">
             {post.category}
           </span>
-          <h1 className="mb-4 text-2xl font-semibold leading-tight tracking-tight text-stone-50 sm:text-3xl">
+          <h1 className="mb-4 text-2xl font-semibold leading-tight tracking-tight text-stone-900 dark:text-stone-50 sm:text-3xl">
             {post.title}
           </h1>
           <div className="mb-10 flex items-center gap-4 text-sm text-stone-500">
@@ -204,8 +204,8 @@ export default async function BlogPostPage({ params }: Props) {
         </article>
 
         {/* CTA */}
-        <div className="mt-16 rounded-2xl border border-white/[0.06] bg-white/[0.03] p-8 text-center">
-          <h2 className="mb-2 text-lg font-semibold text-stone-100">
+        <div className="mt-16 rounded-2xl border border-stone-200 bg-stone-50 p-8 text-center dark:border-white/[0.06] dark:bg-white/[0.03]">
+          <h2 className="mb-2 text-lg font-semibold text-stone-800 dark:text-stone-100">
             AIAH is coming soon
           </h2>
           <p className="mx-auto mb-5 max-w-sm text-sm text-stone-400">
@@ -225,11 +225,11 @@ export default async function BlogPostPage({ params }: Props) {
         {showNext && (
           <Link
             href={`/blog/${nextPost.slug}`}
-            className="mt-8 flex items-center justify-between rounded-2xl border border-white/[0.06] bg-white/[0.03] p-6 transition-all hover:border-white/[0.12] hover:bg-white/[0.05]"
+            className="mt-8 flex items-center justify-between rounded-2xl border border-stone-200 bg-stone-50 p-6 transition-all hover:border-stone-300 hover:bg-stone-100 dark:border-white/[0.06] dark:bg-white/[0.03] dark:hover:border-white/[0.12] dark:hover:bg-white/[0.05]"
           >
             <div>
               <span className="text-xs text-stone-500">Next article</span>
-              <p className="mt-1 font-medium text-stone-200">{nextPost.title}</p>
+              <p className="mt-1 font-medium text-stone-700 dark:text-stone-200">{nextPost.title}</p>
             </div>
             <ArrowRight className="h-5 w-5 text-stone-500" />
           </Link>
