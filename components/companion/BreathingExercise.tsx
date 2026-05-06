@@ -6,6 +6,7 @@ import { X, Wind, Volume2, VolumeX } from "lucide-react";
 import { AIAHOrb } from "@/components/companion/AIAHOrb";
 import { useMood } from "@/lib/mood-context";
 import { awardXP, checkAchievements } from "@/lib/gamification";
+import { startLiveActivity, updateLiveActivity, stopLiveActivity } from "@/lib/live-activity";
 
 type Phase = "intro" | "inhale" | "hold" | "exhale" | "rest" | "done";
 
@@ -409,6 +410,7 @@ export function BreathingExercise({ open, onClose }: BreathingExerciseProps) {
     completedRef.current = true;
     cleanup();
     stopPad();
+    stopLiveActivity(); // End Dynamic Island activity
     setCount(0);
     setPhase("done");
     setFinalQuote(pickEndQuote());
@@ -537,9 +539,32 @@ export function BreathingExercise({ open, onClose }: BreathingExerciseProps) {
     setFinalQuote("");
     setRemainingSession(duration.seconds);
     endAtRef.current = Date.now() + duration.seconds * 1000;
+
+    // Start Dynamic Island Live Activity
+    startLiveActivity({
+      status: `Breathing · ${pattern.name}`,
+      progress: 0,
+      icon: "🫁",
+      accentHex: "#1D9E75",
+      mood: mood,
+      activityType: "breathing",
+    });
+
     sessionRef.current = setInterval(() => {
       const remaining = Math.max(0, Math.ceil((endAtRef.current - Date.now()) / 1000));
       setRemainingSession(remaining);
+      // Update Dynamic Island with progress
+      const elapsed = duration.seconds - remaining;
+      const progress = duration.seconds > 0 ? elapsed / duration.seconds : 0;
+      const mins = Math.floor(remaining / 60);
+      const secs = remaining % 60;
+      const timeStr = `${mins}:${String(secs).padStart(2, "0")}`;
+      updateLiveActivity({
+        status: `Breathing · ${timeStr}`,
+        progress,
+        icon: "🫁",
+        accentHex: "#1D9E75",
+      });
       if (remaining <= 0) finishSession();
     }, 300);
     runCycle(0);
@@ -549,6 +574,7 @@ export function BreathingExercise({ open, onClose }: BreathingExerciseProps) {
     cancelledRef.current = true;
     cleanup();
     stopPad();
+    stopLiveActivity(); // End Dynamic Island activity
     onClose();
   };
 
