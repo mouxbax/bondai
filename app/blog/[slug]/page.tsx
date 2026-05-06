@@ -161,7 +161,10 @@ export default async function BlogPostPage({ params }: Props) {
       <ArticleJsonLd post={post} />
 
       {/* Nav */}
-      <header className="mx-auto flex max-w-4xl items-center justify-between px-6 py-6">
+      <header
+        className="mx-auto flex max-w-4xl items-center justify-between px-6 py-6"
+        style={{ paddingTop: "max(1.5rem, env(safe-area-inset-top, 1.5rem))" }}
+      >
         <Link href="/" className="text-lg font-semibold text-emerald-400">
           AIAH
         </Link>

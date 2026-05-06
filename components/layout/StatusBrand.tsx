@@ -1,61 +1,69 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 
+const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
 /**
- * StatusBrand — a subtle brand element that lives in the iOS status bar area,
- * centered between the clock (left) and signal/battery (right), inside
- * the Dynamic Island / notch area. Only visible on mobile in Capacitor.
+ * StatusBrand — only renders inside the authenticated app shell.
+ * Shows current day name, tappable to navigate to daily plan.
+ * Positioned just below the safe area (Dynamic Island / notch).
+ * Hidden on public pages (landing, blog) where it has no purpose.
  *
- * It shows "AIAH" with a soft emerald glow pulse, giving the feeling that
- * the Dynamic Island is "powered by" the app.
+ * NOTE: To actually render INSIDE the Dynamic Island, a native iOS
+ * Live Activity (ActivityKit + WidgetKit) is required — web content
+ * cannot appear in the Dynamic Island hardware cutout.
  */
 export function StatusBrand() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const [day, setDay] = useState("");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setDay(DAYS[new Date().getDay()]);
+    setMounted(true);
+  }, []);
+
+  // Only show inside the authenticated app shell
+  const isAppRoute = pathname?.startsWith("/home") || pathname?.startsWith("/talk") ||
+    pathname?.startsWith("/plans") || pathname?.startsWith("/breathe") ||
+    pathname?.startsWith("/account") || pathname?.startsWith("/subscribe");
+
+  // Don't render on public pages or before mount
+  if (!mounted || !isAppRoute) return null;
+
   return (
     <div
-      className="pointer-events-none fixed left-0 right-0 top-0 z-50 flex items-start justify-center md:hidden"
+      className="pointer-events-none fixed left-0 right-0 top-0 z-50 flex justify-center md:hidden"
       style={{
-        /* Position halfway into the safe area so it sits at status-bar level
-           (between clock and signal), not below the notch/Dynamic Island.
-           On devices without a notch, safe-area-inset-top is 0 so this
-           collapses to top-[6px] via the max(). */
-        paddingTop: "calc(env(safe-area-inset-top, 0px) / 2 - 4px)",
+        paddingTop: "env(safe-area-inset-top, 0px)",
       }}
     >
-      {/* The brand pill — centered in the status bar row */}
-      <motion.div
-        initial={{ opacity: 0, y: -8 }}
+      <motion.button
+        initial={{ opacity: 0, y: -4 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1, duration: 0.8, ease: "easeOut" }}
-        className="relative flex items-center gap-1.5"
+        transition={{ delay: 0.8, duration: 0.6, ease: "easeOut" }}
+        onClick={() => router.push("/plans")}
+        className="pointer-events-auto flex items-center gap-1.5 rounded-full px-3 py-0.5 transition-all active:scale-95"
+        style={{ marginTop: "-2px" }}
       >
-        {/* Glow backdrop */}
-        <div
-          className="absolute inset-0 -inset-x-3 -inset-y-1 rounded-full opacity-40"
-          style={{
-            background: "radial-gradient(ellipse, rgba(45,212,163,0.3) 0%, transparent 70%)",
-          }}
-        />
-
-        {/* Dot indicator — like a live status */}
         <motion.div
-          className="relative h-1.5 w-1.5 rounded-full bg-emerald-400"
-          animate={{ opacity: [1, 0.4, 1] }}
-          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          className="h-1 w-1 rounded-full bg-emerald-400"
+          animate={{ opacity: [1, 0.3, 1] }}
+          transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
         />
-
-        {/* Brand text */}
-        <span className="relative text-[10px] font-semibold tracking-[0.2em] text-emerald-400/80">
-          AIAH
+        <span className="text-[10px] font-medium tracking-widest text-emerald-400/70">
+          {day.toUpperCase()}
         </span>
-
-        {/* Dot indicator — symmetry */}
         <motion.div
-          className="relative h-1.5 w-1.5 rounded-full bg-emerald-400"
-          animate={{ opacity: [1, 0.4, 1] }}
-          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+          className="h-1 w-1 rounded-full bg-emerald-400"
+          animate={{ opacity: [1, 0.3, 1] }}
+          transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut", delay: 1.2 }}
         />
-      </motion.div>
+      </motion.button>
     </div>
   );
 }

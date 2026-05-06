@@ -12,7 +12,7 @@ export function Header({ title, right }: { title: string; right?: React.ReactNod
   React.useEffect(() => setMounted(true), []);
 
   return (
-    <header className="sticky top-0 z-40 flex items-center justify-between bg-[#FAFAF8]/70 px-4 py-3 backdrop-blur-2xl dark:bg-[#0f1412]/70 md:px-6 safe-area-top" style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top, 0.75rem))" }}>
+    <header className="sticky top-0 z-40 flex items-center justify-between bg-[#FAFAF8]/70 px-4 py-3 backdrop-blur-2xl dark:bg-[#0f1412]/70 md:px-6 safe-area-top" style={{ paddingTop: "calc(env(safe-area-inset-top, 0.75rem) + 0.75rem)" }}>
       <h1 className="text-lg font-semibold tracking-tight text-stone-900 dark:text-stone-50">{title}</h1>
       <div className="flex items-center gap-1">
         {right}
